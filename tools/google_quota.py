@@ -87,21 +87,28 @@ def reserve_request(
     fallback explicitly supplies preferred_pool_id. A provider 429 must stop
     the current run; this function does not rotate keys after a quota error.
     """
-    pools = available_pools()
+    all_pools = available_pools()
     now = datetime.now(timezone.utc)
     if preferred_pool_id is not None:
-        pools = [pool for pool in pools if pool[0] == preferred_pool_id]
-        if not pools:
+        preferred_index = next(
+            (i for i, item in enumerate(all_pools) if item[0] == preferred_pool_id),
+            None,
+        )
+        if preferred_index is None:
             raise RuntimeError("The selected Gemini project pool is not configured in this runtime.")
+        candidate_indices = [preferred_index]
+    else:
+        with _locked_state() as state:
+            start_index = int(state.get("next_pool", 0)) % len(all_pools)
+        candidate_indices = [
+            (start_index + offset) % len(all_pools)
+            for offset in range(len(all_pools))
+        ]
 
     with _locked_state() as state:
         rows = _prune(list(state.get("requests", [])), now)
-        all_pools = available_pools()
-        start = int(state.get("next_pool", 0)) % len(all_pools)
-
-        for offset in range(len(pools)):
-            pool_id, api_key = pools[offset]
-            index = next(i for i, item in enumerate(all_pools) if item[0] == pool_id)
+        for index in candidate_indices:
+            pool_id, api_key = all_pools[index]
             pool_rows = [r for r in rows if r.get("pool") == pool_id and r.get("group") == group]
             last_minute = []
             for row in pool_rows:
