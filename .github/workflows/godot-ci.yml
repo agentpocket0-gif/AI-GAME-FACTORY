@@ -9,8 +9,7 @@ on:
       - "config/**"
       - "requirements.txt"
       - "tests/**"
-      - ".github/workflows/godot-ci.yml"
-      - ".github/workflows/auto-repair.yml"
+      - ".github/workflows/**"
       - "tools/**"
       - "config/**"
       - "requirements.txt"
@@ -55,8 +54,9 @@ jobs:
       - name: Validate model configuration, DSH overlay and agent scripts
         run: |
           python3 -m json.tool config/model-routing.json > /dev/null
-          python3 -c "import yaml; yaml.safe_load(open('config/dsh-profile-overlay.example.yml', encoding='utf-8'))"
+          python3 -c "import yaml, glob; [yaml.safe_load(open(p, encoding='utf-8')) for p in glob.glob('.github/workflows/*.yml')]; yaml.safe_load(open('config/dsh-profile-overlay.example.yml', encoding='utf-8'))"
           python3 -m py_compile tools/*.py
+          python3 -m configparser < /dev/null || true
           python3 tools/gemini_video_review.py --help > /dev/null
           python3 tools/gemma_reason.py --help > /dev/null
           python3 -m unittest discover -s tests/py -v
