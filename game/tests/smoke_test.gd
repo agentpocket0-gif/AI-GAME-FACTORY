@@ -145,7 +145,8 @@ func _run() -> void:
 	game.set("scores", stored_scores)
 	game.set("shot_active", true)
 	game.set("fouled_this_shot", true)
-	game.set("potted_this_shot", [])
+	var no_fouled_coins: Array[Dictionary] = []
+	game.set("potted_this_shot", no_fouled_coins)
 	game.set("own_potted_this_shot", false)
 	game.call("_complete_turn")
 	if not _check(int(game.call("_count_owner", 0)) == 9, "Foul penalty must restore a previously pocketed own disc"):
