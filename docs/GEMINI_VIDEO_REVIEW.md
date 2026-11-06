@@ -1,30 +1,27 @@
 # Gemini gameplay video review
 
-This helper analyses an authorised MP4/MOV/WEBM recording of our own game's screen and saves a UX/gameplay bug report.
+This tool sends a private gameplay recording from your own game to Gemini and saves a time-stamped UX/gameplay report.
 
-## Models
-
-- Primary: gemini-3.5-flash-lite
-- Fallback: gemini-3.1-flash-lite
+Models:
+- Primary: `gemini-3.5-flash-lite`
+- Fallback: `gemini-3.1-flash-lite`
 - Thinking level: HIGH
-- Video upload: Gemini Files API
+- Upload: Gemini Files API
 
-Both model IDs support video input and thinking according to Google's model pages. The helper does not use Gemma for video; Gemma 4 is reserved for text/reasoning tasks.
+Both Google model pages document video and image input plus thinking support. Gemma is not used for video in this helper.
 
-## Run
-
-Install dependencies:
+Install the dependency:
 
     python -m pip install -r requirements.txt
 
-Set the two keys as environment variables, then run:
+Set `GEMINI_API_KEY_1` in the private runtime, then run:
 
-    python tools/gemini_video_review.py /path/to/your-gameplay.mp4
+    python tools/gemini_video_review.py /path/to/gameplay.mp4
 
 Optional output path:
 
-    python tools/gemini_video_review.py /path/to/your-gameplay.mp4 --output reports/video-review/review.md
+    python tools/gemini_video_review.py /path/to/gameplay.mp4 --output reports/video-review/review.md
 
-Do not place private recordings or personal information in this public repository. Run this helper in a private environment with the video file. The helper uses a local quota ledger at .cache/gemini-video-quota.json and applies 10 RPM, 500 requests per 24 hours per configured model, and 1,000 requests total per 24 hours. This is an app-side safety cap; real quotas are displayed in AI Studio.
+Do not commit private gameplay videos or account information to this public repository. The helper maintains a local quota ledger under `.cache/`, uses one request at a time and stops on 429/RESOURCE_EXHAUSTED without trying another key. The second key is retained for manually approved authentication recovery only; it is not a quota multiplier.
 
-Two keys from the same Google Cloud project share quotas. The helper stops on 429/RESOURCE_EXHAUSTED and never switches keys to bypass a limit. The second key is not used as an RPM multiplier.
+The app-side guard caps video review at 10 requests/minute, 500 requests/24h for the primary model and 500 requests/24h for the fallback, with a total 1,000/24h cap. Google applies actual quotas per project and model; check AI Studio for your live limit.
