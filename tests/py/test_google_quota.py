@@ -39,6 +39,23 @@ class GeminiProjectPoolTests(unittest.TestCase):
             self.assertEqual(first, ("project_1", "test-key-1"))
             self.assertEqual(second, ("project_2", "test-key-2"))
 
+    def test_same_project_fallback_does_not_advance_quota_to_other_key(self):
+        with patch.dict(os.environ, {
+            "GEMINI_API_KEY_1": "test-key-1",
+            "GEMINI_API_KEY_2": "test-key-2",
+            "GEMINI_PROJECTS_ARE_SEPARATE": "true",
+        }, clear=False):
+            first = google_quota.reserve_request("video", "gemini-3.5-flash-lite",
+                rpm_cap=10, model_daily_cap=500, group_daily_cap=1000)
+            fallback = google_quota.reserve_request("video", "gemini-3.1-flash-lite",
+                rpm_cap=10, model_daily_cap=500, group_daily_cap=1000,
+                preferred_pool_id=first[0])
+            next_task = google_quota.reserve_request("video", "gemini-3.5-flash-lite",
+                rpm_cap=10, model_daily_cap=500, group_daily_cap=1000)
+            self.assertEqual(first, ("project_1", "test-key-1"))
+            self.assertEqual(fallback, ("project_1", "test-key-1"))
+            self.assertEqual(next_task, ("project_2", "test-key-2"))
+
     def test_quota_is_enforced_separately_for_each_project(self):
         with patch.dict(os.environ, {
             "GEMINI_API_KEY_1": "test-key-1",
