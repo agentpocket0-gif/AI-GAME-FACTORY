@@ -84,6 +84,10 @@ func _run() -> void:
 		return
 	if not _check(game.get("pieces").size() == 12 and int(game.call("_count_owner", 0)) == 12 and int(game.call("_count_owner", 1)) == 0, "Precision Challenge must create twelve solo targets"):
 		return
+	var challenge_player_rect: Rect2 = game.get("mode_button_rect")
+	game.call("_handle_press", challenge_player_rect.get_center())
+	if not _check(game.get("local_two_player") == false, "Precision Challenge must stay solo"):
+		return
 	game.set("turn_time_remaining", 0.01)
 	game.call("_physics_process", 0.02)
 	if not _check(game.get("player_turn") == 0 and float(game.get("turn_time_remaining")) > 0.0, "Challenge clock must reset without starting an AI turn"):
