@@ -155,9 +155,90 @@ func _run() -> void:
 	if not _check(int(stored_scores[0]) == 0, "Foul penalty must subtract one banked point"):
 		return
 
+	# Potting a valid own disc without a foul keeps the same player's turn.
+	game.call("reset_match")
+	var own_turn_pieces: Array = game.get("pieces")
+	var own_turn_index := -1
+	for i in range(own_turn_pieces.size()):
+		if int(own_turn_pieces[i]["owner"]) == 0:
+			own_turn_index = i
+			break
+	if not _check(own_turn_index >= 0, "A white disc must exist for the turn-retention test"):
+		return
+	own_turn_pieces.remove_at(own_turn_index)
+	game.set("pieces", own_turn_pieces)
+	var own_turn_records: Array[Dictionary] = [{"owner": 0, "kind": "disc"}]
+	game.set("potted_this_shot", own_turn_records)
+	game.set("own_piece_potted_this_shot", true)
+	game.set("fouled_this_shot", false)
+	game.set("shot_active", true)
+	var own_turn_scores: Array = game.get("scores")
+	own_turn_scores[0] = 1
+	game.set("scores", own_turn_scores)
+	game.call("_complete_turn")
+	if not _check(game.get("player_turn") == 0, "A clean own-disc pot must retain the player's turn"):
+		return
+
+	# An uncovered queen must return to the centre and must not count as captured.
+	game.call("reset_match")
+	var queen_return_pieces: Array = game.get("pieces")
+	var queen_return_index := -1
+	for i in range(queen_return_pieces.size()):
+		if int(queen_return_pieces[i]["owner"]) == 2:
+			queen_return_index = i
+			break
+	if not _check(queen_return_index >= 0, "Classic mode must include a queen for the cover test"):
+		return
+	queen_return_pieces.remove_at(queen_return_index)
+	game.set("pieces", queen_return_pieces)
+	game.set("queen_potted_this_shot", true)
+	game.set("own_piece_potted_this_shot", false)
+	game.set("fouled_this_shot", false)
+	game.set("shot_active", true)
+	var no_cover_records: Array[Dictionary] = []
+	game.set("potted_this_shot", no_cover_records)
+	game.call("_complete_turn")
+	if not _check(int(game.call("_count_owner", 2)) == 1, "An uncovered queen must return to the board"):
+		return
+	if not _check(game.get("queen_captured") == false, "An uncovered queen must not be marked captured"):
+		return
+
+	# A queen covered by the player's own disc is captured and awards three points.
+	game.call("reset_match")
+	var queen_cover_pieces: Array = game.get("pieces")
+	var queen_cover_index := -1
+	var cover_disc_index := -1
+	for i in range(queen_cover_pieces.size()):
+		if int(queen_cover_pieces[i]["owner"]) == 2:
+			queen_cover_index = i
+		elif int(queen_cover_pieces[i]["owner"]) == 0:
+			cover_disc_index = i
+	if not _check(queen_cover_index >= 0 and cover_disc_index >= 0, "Queen and white cover disc must exist"):
+		return
+	var remove_first := maxi(queen_cover_index, cover_disc_index)
+	var remove_second := mini(queen_cover_index, cover_disc_index)
+	queen_cover_pieces.remove_at(remove_first)
+	queen_cover_pieces.remove_at(remove_second)
+	game.set("pieces", queen_cover_pieces)
+	game.set("queen_potted_this_shot", true)
+	game.set("own_piece_potted_this_shot", true)
+	game.set("fouled_this_shot", false)
+	game.set("shot_active", true)
+	var cover_records: Array[Dictionary] = [{"owner": 0, "kind": "disc"}]
+	game.set("potted_this_shot", cover_records)
+	var cover_scores: Array = game.get("scores")
+	cover_scores[0] = 1
+	game.set("scores", cover_scores)
+	game.call("_complete_turn")
+	if not _check(game.get("queen_captured") == true, "A covered queen must be marked captured"):
+		return
+	cover_scores = game.get("scores")
+	if not _check(int(cover_scores[0]) == 4, "A covered queen must award exactly three bonus points"):
+		return
+
 	game.call("_save_profile")
 	if not _check(FileAccess.file_exists("user://player_profile.json"), "Profile must be saved locally"):
 		return
 
-	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI pocket aim, foul penalties and local save")
+	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI aim, foul penalties, queen cover rules and local save")
 	quit(0)
