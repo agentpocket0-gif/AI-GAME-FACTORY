@@ -8,7 +8,7 @@ Run it from GitHub:
 3. Tap **Run workflow**.
 4. When it succeeds, download the `BoardMastersArena-Android-debug` artifact.
 
-The workflow uses Godot 4.7.2, the matching Android export templates, Java 17 and Android API 36. It builds an **arm64 debug APK** for phone testing. It is not a signed release AAB and is not ready for Play Store upload.
+The workflow uses Godot 4.7.2, the matching Android export templates, Java 17 and an Android SDK installed on the runner. It builds an **arm64 debug APK** for phone testing using Godot's prebuilt Android template. The `gradle_build/min_sdk` and `gradle_build/target_sdk` preset values apply only when Gradle export is enabled, so this prebuilt-template debug APK does **not** prove API 36 targeting. It is not a signed release AAB and is not ready for Play Store upload. A Play release needs a separate Gradle/AAB pipeline, API 36 target verification, release keystore secrets, and device/Play Console checks.
 
 The export preset uses the original placeholder package ID `com.agentpocket.boardmastersarena`. Change it only before the first public release and keep it stable thereafter.
 
