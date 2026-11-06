@@ -49,6 +49,10 @@ var board_button_rect := Rect2()
 var mode_button_rect := Rect2()
 var game_mode_button_rect := Rect2()
 var striker_button_rect := Rect2()
+var is_paused := false
+var pause_panel_rect := Rect2()
+var resume_button_rect := Rect2()
+var pause_new_match_button_rect := Rect2()
 
 func _ready() -> void:
 	_load_board_catalog()
@@ -59,7 +63,7 @@ func _ready() -> void:
 	reset_match()
 
 func _process(delta: float) -> void:
-	if visual_effects.is_empty():
+	if is_paused or visual_effects.is_empty():
 		return
 	for i in range(visual_effects.size() - 1, -1, -1):
 		var effect: Dictionary = visual_effects[i]
@@ -157,6 +161,12 @@ func _refresh_geometry() -> void:
 	striker_button_rect = Rect2(Vector2(right_x, second_row_y), button_size)
 	var reset_size := Vector2(minf(250.0 * ui_scale, view.x * 0.62), 58.0 * ui_scale)
 	reset_rect = Rect2(Vector2(view.x * 0.5 - reset_size.x * 0.5, board_rect.end.y + board_size * 0.38), reset_size)
+	var panel_size := Vector2(minf(view.x * 0.88, 500.0 * ui_scale + 90.0), minf(view.y * 0.52, 300.0 * ui_scale + 24.0))
+	pause_panel_rect = Rect2(view * 0.5 - panel_size * 0.5, panel_size)
+	var action_size := Vector2(panel_size.x * 0.78, maxf(42.0, 48.0 * ui_scale))
+	var resume_y := pause_panel_rect.position.y + panel_size.y * 0.43
+	resume_button_rect = Rect2(Vector2(view.x * 0.5 - action_size.x * 0.5, resume_y), action_size)
+	pause_new_match_button_rect = Rect2(Vector2(view.x * 0.5 - action_size.x * 0.5, resume_y + action_size.y + maxf(8.0, 14.0 * ui_scale)), action_size)
 
 func _load_striker_catalog() -> void:
 	var file := FileAccess.open("res://data/striker_catalog.json", FileAccess.READ)
@@ -193,6 +203,7 @@ func _turn_time_limit() -> float:
 	return float(_selected_striker().get("time", 20))
 
 func reset_match() -> void:
+	is_paused = false
 	pieces.clear()
 	visual_effects.clear()
 	potted_this_shot.clear()
@@ -310,8 +321,26 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and aiming:
 		aim_current = event.position
 		queue_redraw()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE or event.keycode == KEY_BACK:
+			is_paused = not is_paused
+			status_text = "Match paused." if is_paused else "Match resumed."
+			queue_redraw()
 
 func _handle_press(point: Vector2) -> void:
+	if is_paused:
+		if resume_button_rect.has_point(point):
+			is_paused = false
+			status_text = "Match resumed."
+			queue_redraw()
+		elif pause_new_match_button_rect.has_point(point):
+			reset_match()
+		return
+	if reset_rect.has_point(point):
+		is_paused = true
+		status_text = "Match paused."
+		queue_redraw()
+		return
 	if game_mode_button_rect.has_point(point):
 		match_mode = MODE_DISC_POOL if match_mode == MODE_CLASSIC else MODE_CLASSIC
 		reset_match()
@@ -380,6 +409,8 @@ func _begin_shot() -> void:
 	bot_delay = -1.0
 
 func _physics_process(delta: float) -> void:
+	if is_paused:
+		return
 	if not shot_active:
 		if not game_over and not (player_turn == BLACK and not local_two_player):
 			turn_time_remaining -= delta
@@ -701,6 +732,8 @@ func _draw() -> void:
 	_draw_pieces()
 	_draw_visual_effects()
 	_draw_controls(view)
+	if is_paused:
+		_draw_pause_menu(view)
 	if aiming:
 		_draw_aim_guide()
 
@@ -831,12 +864,26 @@ func _draw_controls(view: Vector2) -> void:
 
 	draw_rect(reset_rect, Color("#C18A3D"), true)
 	draw_rect(reset_rect, Color("#F3D89A"), false, outline)
-	draw_string(ThemeDB.fallback_font, Vector2(reset_rect.position.x, reset_rect.position.y + reset_rect.size.y * 0.66), "NEW MATCH", HORIZONTAL_ALIGNMENT_CENTER, reset_rect.size.x, maxi(12, roundi(19.0 * scale)), Color("#101C26"))
+	draw_string(ThemeDB.fallback_font, Vector2(reset_rect.position.x, reset_rect.position.y + reset_rect.size.y * 0.66), "PAUSE / MENU", HORIZONTAL_ALIGNMENT_CENTER, reset_rect.size.x, maxi(12, roundi(19.0 * scale)), Color("#101C26"))
 
 	var status_y := board_rect.position.y - 52.0 * scale
 	var hint_y := board_rect.position.y - 24.0 * scale
 	draw_string(ThemeDB.fallback_font, Vector2(20.0 * scale, status_y), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0 * scale, maxi(10, roundi(15.0 * scale)), Color("#DCE7E8"))
 	draw_string(ThemeDB.fallback_font, Vector2(20.0 * scale, hint_y), "MOVE STRIKER ON BASELINE  •  DRAG BACK TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0 * scale, maxi(9, roundi(13.0 * scale)), Color("#8CAEBB"))
+
+func _draw_pause_menu(view: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, view), Color(0.01, 0.02, 0.035, 0.76), true)
+	draw_rect(pause_panel_rect, Color("#132638"), true)
+	draw_rect(pause_panel_rect, Color("#D9B878"), false, 2.5)
+	var font := ThemeDB.fallback_font
+	var title_y := pause_panel_rect.position.y + pause_panel_rect.size.y * 0.29
+	draw_string(font, Vector2(0.0, title_y), "MATCH PAUSED", HORIZONTAL_ALIGNMENT_CENTER, view.x, maxi(18, roundi(30.0 * _ui_scale(view))), Color("#F7E8C8"))
+	draw_rect(resume_button_rect, Color("#2D806B"), true)
+	draw_rect(resume_button_rect, Color("#A6E0C5"), false, 2.0)
+	draw_string(font, Vector2(resume_button_rect.position.x, resume_button_rect.position.y + resume_button_rect.size.y * 0.68), "RESUME MATCH", HORIZONTAL_ALIGNMENT_CENTER, resume_button_rect.size.x, maxi(13, roundi(18.0 * _ui_scale(view))), Color.WHITE)
+	draw_rect(pause_new_match_button_rect, Color("#8A5937"), true)
+	draw_rect(pause_new_match_button_rect, Color("#E9C58E"), false, 2.0)
+	draw_string(font, Vector2(pause_new_match_button_rect.position.x, pause_new_match_button_rect.position.y + pause_new_match_button_rect.size.y * 0.68), "NEW MATCH", HORIZONTAL_ALIGNMENT_CENTER, pause_new_match_button_rect.size.x, maxi(13, roundi(18.0 * _ui_scale(view))), Color("#FFF2D7"))
 
 func _theme_color(key: String, fallback: String) -> Color:
 	if board_catalog.is_empty():
