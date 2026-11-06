@@ -6,6 +6,9 @@ on:
     paths:
       - "game/**"
       - ".github/workflows/godot-ci.yml"
+      - ".github/workflows/auto-repair.yml"
+      - "tools/ai_repair.py"
+      - "config/**"
   pull_request:
     paths:
       - "game/**"
@@ -38,6 +41,11 @@ jobs:
           chmod +x Godot_v4.7.2-stable_linux.x86_64
           echo "$RUNNER_TEMP/godot" >> "$GITHUB_PATH"
           echo "GODOT_BIN=$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Validate model configuration and repair-agent syntax
+        run: |
+          python3 -m json.tool config/model-routing.json > /dev/null
+          python3 -m py_compile tools/ai_repair.py
 
       - name: Import and parse project
         run: "$GODOT_BIN" --headless --path game --editor --quit
