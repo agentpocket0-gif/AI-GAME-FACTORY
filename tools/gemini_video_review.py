@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Review an authorised gameplay video with Gemini Flash-Lite.
 
-Keys are read only from GEMINI_API_KEY_1 and GEMINI_API_KEY_2.
-A second key is tried only when the first key is rejected as invalid.
-HTTP 429 / quota errors stop immediately; keys are never rotated to evade quotas.
+The helper uses GEMINI_API_KEY_1. A second key is not used to multiply quota.
+HTTP 429 / quota errors stop immediately.
 """
 from __future__ import annotations
 
@@ -84,15 +83,12 @@ def enforce_quota(model: str, limits: dict) -> None:
     rows.append({"time": now.isoformat(), "model": model})
     save_state({"requests": rows})
 
-def get_keys() -> list[str]:
-    keys = [os.getenv("GEMINI_API_KEY_1", "").strip(), os.getenv("GEMINI_API_KEY_2", "").strip()]
-    return [key for key in keys if key]
-
-def make_client(keys: list[str]):
-    if not keys:
-        raise RuntimeError("Add GEMINI_API_KEY_1 (and optionally GEMINI_API_KEY_2) as environment secrets.")
+def make_client():
+    key = os.getenv("GEMINI_API_KEY_1", "").strip()
+    if not key:
+        raise RuntimeError("Set GEMINI_API_KEY_1 in the private runtime environment.")
     try:
-        return genai.Client(api_key=keys[0])
+        return genai.Client(api_key=key)
     except Exception as exc:
         raise RuntimeError(f"Could not initialise Gemini client: {exc}") from exc
 
@@ -125,12 +121,11 @@ def main() -> int:
     video_cfg = config["providers"]["google"]["video_review"]
     models = [video_cfg["primary"], video_cfg["fallback"]]
     limits = video_cfg["app_limits"]
-    keys = get_keys()
-    if not keys:
-        print("Set GEMINI_API_KEY_1 and GEMINI_API_KEY_2 in the runtime environment.", file=sys.stderr)
+    try:
+        client = make_client()
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
         return 3
-
-    client = make_client(keys)
     uploaded = upload_and_wait(client, args.video)
 
     report = None
