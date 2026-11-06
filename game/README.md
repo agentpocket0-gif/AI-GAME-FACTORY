@@ -6,6 +6,7 @@ This folder contains an original, offline-first carrom-style playable slice.
 
 - Classic Carrom setup: 18 discs plus the queen.
 - Disc Pool setup: 12 discs and no queen.
+- Precision Challenge: twelve gold targets, solo scoring and target-clear win condition.
 - Drag-back touch/mouse aiming and shot release.
 - Place the striker horizontally along the active baseline.
 - 2D disc collisions, friction, cushion bounce and four corner pockets.
