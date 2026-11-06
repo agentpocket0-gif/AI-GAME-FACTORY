@@ -1,5 +1,5 @@
 {
-  "policy_version": 1,
+  "policy_version": 2,
   "reasoning": "high",
   "providers": {
     "nvidia": {
@@ -11,10 +11,12 @@
         "coding_fast": "nvidia/nemotron-3.5-lightning-30b-a3b",
         "coding_deep": "nvidia/nemotron-3-ultra-550b-a55b"
       },
-      "reasoning_parameters": {
-        "enable_thinking": true,
-        "lightning_reasoning_budget": 16384
-      }
+      "request_defaults": {
+        "temperature": 1,
+        "top_p": 0.95,
+        "enable_thinking": true
+      },
+      "lightning_reasoning_budget": 16384
     },
     "google": {
       "base_url": "https://generativelanguage.googleapis.com/v1beta",
@@ -22,17 +24,37 @@
         "GEMINI_API_KEY_1",
         "GEMINI_API_KEY_2"
       ],
-      "shared_project_rpm_cap": 10,
-      "shared_project_rpd_cap": 500,
+      "keys_share_project_quota_unless_user_confirms_separate_projects": true,
       "max_parallel_requests": 1,
-      "video_review_model_primary": "gemini-3.5-flash-lite",
-      "video_review_model_fallback": "gemini-3.1-flash-lite",
-      "general_reasoning_models": [
-        "gemma-4-26b-a4b-it",
-        "gemma-4-31b-it"
-      ],
-      "reasoning_level": "high",
-      "key_failover_policy": "Use the second key only for authentication/configuration recovery; never switch keys to bypass 429 or quota errors. Gemini limits are project scoped."
+      "video_review": {
+        "primary": "gemini-3.5-flash-lite",
+        "fallback": "gemini-3.1-flash-lite",
+        "thinking_level": "HIGH",
+        "app_limits": {
+          "rpm": 10,
+          "primary_rpd": 500,
+          "fallback_rpd": 500,
+          "total_rolling_24h": 1000
+        }
+      },
+      "gemma4": {
+        "reasoning_models": [
+          "gemma-4-26b-a4b-it",
+          "gemma-4-31b-it"
+        ],
+        "thinking_mode": "HIGH",
+        "requested_app_limits_per_model": {
+          "rpm": 28,
+          "rolling_24h": 14000
+        },
+        "note": "Application caps only; verify real project and model quotas in AI Studio."
+      },
+      "quota_policy": {
+        "on_429": "STOP_AND_WAIT",
+        "key_rotation_on_quota_error": false,
+        "second_key_role": "authentication_recovery_only",
+        "daily_window": "rolling_24h_conservative_local_guard"
+      }
     }
   },
   "routing": {
@@ -40,8 +62,8 @@
     "routine_code_changes": "nvidia.coding_fast",
     "bug_repair": "nvidia.coding_fast",
     "architecture_review": "nvidia.coding_deep",
-    "video_review": "google.video_review_model_primary",
-    "video_review_fallback": "google.video_review_model_fallback",
-    "text_reasoning_fallback": "google.general_reasoning_models"
+    "video_review": "google.video_review.primary",
+    "video_review_fallback": "google.video_review.fallback",
+    "text_reasoning_fallback": "google.gemma4.reasoning_models"
   }
 }
