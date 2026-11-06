@@ -1,0 +1,242 @@
+[
+  {
+    "id": 1,
+    "name": "Bronze Comet",
+    "force": 1,
+    "aim": 1,
+    "time": 20,
+    "unlock_xp": 0,
+    "base": "#B77A48",
+    "highlight": "#F0C28B"
+  },
+  {
+    "id": 2,
+    "name": "Ivory Pulse",
+    "force": 0.96,
+    "aim": 1.06,
+    "time": 21,
+    "unlock_xp": 0,
+    "base": "#E9E2D1",
+    "highlight": "#FFFFFF"
+  },
+  {
+    "id": 3,
+    "name": "Cobalt Crown",
+    "force": 1.04,
+    "aim": 0.96,
+    "time": 19,
+    "unlock_xp": 0,
+    "base": "#316DA8",
+    "highlight": "#A8D9F4"
+  },
+  {
+    "id": 4,
+    "name": "Jade Runner",
+    "force": 0.99,
+    "aim": 1.02,
+    "time": 20,
+    "unlock_xp": 100,
+    "base": "#2F855F",
+    "highlight": "#B3E8BE"
+  },
+  {
+    "id": 5,
+    "name": "Crimson Arc",
+    "force": 1.06,
+    "aim": 0.94,
+    "time": 18,
+    "unlock_xp": 180,
+    "base": "#A83948",
+    "highlight": "#F1B5A1"
+  },
+  {
+    "id": 6,
+    "name": "Silver Falcon",
+    "force": 0.94,
+    "aim": 1.08,
+    "time": 22,
+    "unlock_xp": 260,
+    "base": "#AAB6C4",
+    "highlight": "#F4F8FF"
+  },
+  {
+    "id": 7,
+    "name": "Amber Orbit",
+    "force": 1.02,
+    "aim": 0.98,
+    "time": 20,
+    "unlock_xp": 360,
+    "base": "#C48B36",
+    "highlight": "#F4D48A"
+  },
+  {
+    "id": 8,
+    "name": "Sapphire Drift",
+    "force": 0.97,
+    "aim": 1.04,
+    "time": 21,
+    "unlock_xp": 480,
+    "base": "#3A63A1",
+    "highlight": "#A8B9F5"
+  },
+  {
+    "id": 9,
+    "name": "Carbon Edge",
+    "force": 1.05,
+    "aim": 0.95,
+    "time": 19,
+    "unlock_xp": 620,
+    "base": "#323E49",
+    "highlight": "#9CB4C5"
+  },
+  {
+    "id": 10,
+    "name": "Pearl Nova",
+    "force": 0.95,
+    "aim": 1.07,
+    "time": 22,
+    "unlock_xp": 780,
+    "base": "#C6BFAF",
+    "highlight": "#FFFFFF"
+  },
+  {
+    "id": 11,
+    "name": "Copper Vortex",
+    "force": 1.01,
+    "aim": 0.99,
+    "time": 20,
+    "unlock_xp": 960,
+    "base": "#A76A3E",
+    "highlight": "#E8C1A1"
+  },
+  {
+    "id": 12,
+    "name": "Emerald Glide",
+    "force": 0.98,
+    "aim": 1.05,
+    "time": 21,
+    "unlock_xp": 1160,
+    "base": "#3A8B72",
+    "highlight": "#B1E6D3"
+  },
+  {
+    "id": 13,
+    "name": "Arctic Spark",
+    "force": 0.93,
+    "aim": 1.09,
+    "time": 22,
+    "unlock_xp": 1380,
+    "base": "#9CC5D9",
+    "highlight": "#F5FDFF"
+  },
+  {
+    "id": 14,
+    "name": "Solar Knight",
+    "force": 1.07,
+    "aim": 0.93,
+    "time": 18,
+    "unlock_xp": 1620,
+    "base": "#D89A35",
+    "highlight": "#FFF0A4"
+  },
+  {
+    "id": 15,
+    "name": "Violet Dash",
+    "force": 1,
+    "aim": 1.02,
+    "time": 20,
+    "unlock_xp": 1880,
+    "base": "#76529E",
+    "highlight": "#D4B6F0"
+  },
+  {
+    "id": 16,
+    "name": "Titan Loop",
+    "force": 1.03,
+    "aim": 0.97,
+    "time": 19,
+    "unlock_xp": 2160,
+    "base": "#586B79",
+    "highlight": "#D3DFE6"
+  },
+  {
+    "id": 17,
+    "name": "Onyx Wave",
+    "force": 0.96,
+    "aim": 1.06,
+    "time": 21,
+    "unlock_xp": 2460,
+    "base": "#242B33",
+    "highlight": "#7B8A9B"
+  },
+  {
+    "id": 18,
+    "name": "Rose Quartz",
+    "force": 1.04,
+    "aim": 0.95,
+    "time": 19,
+    "unlock_xp": 2780,
+    "base": "#BA8298",
+    "highlight": "#F3D5E1"
+  },
+  {
+    "id": 19,
+    "name": "Storm Rider",
+    "force": 0.99,
+    "aim": 1.03,
+    "time": 20,
+    "unlock_xp": 3120,
+    "base": "#3E6D8E",
+    "highlight": "#B7E3F5"
+  },
+  {
+    "id": 20,
+    "name": "Golden Axis",
+    "force": 1.05,
+    "aim": 0.94,
+    "time": 18,
+    "unlock_xp": 3480,
+    "base": "#C09B42",
+    "highlight": "#FCE6A5"
+  },
+  {
+    "id": 21,
+    "name": "Lunar Crest",
+    "force": 0.95,
+    "aim": 1.08,
+    "time": 22,
+    "unlock_xp": 3860,
+    "base": "#5D7296",
+    "highlight": "#C4D9F6"
+  },
+  {
+    "id": 22,
+    "name": "Neon Circuit",
+    "force": 1.02,
+    "aim": 0.98,
+    "time": 20,
+    "unlock_xp": 4260,
+    "base": "#2D4F6E",
+    "highlight": "#52E4D1"
+  },
+  {
+    "id": 23,
+    "name": "Royal Prism",
+    "force": 0.98,
+    "aim": 1.04,
+    "time": 21,
+    "unlock_xp": 4680,
+    "base": "#7C5B36",
+    "highlight": "#EAD29A"
+  },
+  {
+    "id": 24,
+    "name": "Apex Horizon",
+    "force": 1.06,
+    "aim": 0.96,
+    "time": 19,
+    "unlock_xp": 5120,
+    "base": "#344D72",
+    "highlight": "#F0D8A2"
+  }
+]
