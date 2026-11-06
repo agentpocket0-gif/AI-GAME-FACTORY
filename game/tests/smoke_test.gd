@@ -71,6 +71,25 @@ func _run() -> void:
 	game.call("_physics_process", 0.02)
 	assert(game.get("player_turn") == 1, "Expired turn clock must pass the turn")
 
+	# Potting an opponent disc is a foul and restores that disc before passing the turn.
+	game.call("reset_match")
+	var black_before := game.call("_count_owner", 1)
+	var black_piece_index := -1
+	var pieces: Array = game.get("pieces")
+	for i in range(pieces.size()):
+		if int(pieces[i]["owner"]) == 1:
+			black_piece_index = i
+			break
+	assert(black_piece_index >= 0, "Black rack must contain a disc")
+	pieces.remove_at(black_piece_index)
+	game.set("pieces", pieces)
+	game.set("shot_active", true)
+	game.set("fouled_this_shot", true)
+	game.set("potted_this_shot", [{"owner": 1, "kind": "disc"}])
+	game.call("_complete_turn")
+	assert(game.call("_count_owner", 1) == black_before, "Foul must restore the opponent disc")
+	assert(game.get("player_turn") == 1, "Opponent-disc foul must pass the turn")
+
 	# Profile settings must be writable to the device's user data folder.
 	game.call("_save_profile")
 	assert(FileAccess.file_exists("user://player_profile.json"), "Profile must be saved locally")
