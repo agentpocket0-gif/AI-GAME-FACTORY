@@ -13,6 +13,9 @@ window/size/window_height_override=800
 window/stretch/mode="canvas_items"
 window/handheld/orientation=1
 
+[physics]
+common/physics_ticks_per_second=120
+
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
