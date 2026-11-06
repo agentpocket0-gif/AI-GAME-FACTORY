@@ -69,21 +69,32 @@ func _load_board_catalog() -> void:
 	if parsed is Array:
 		board_catalog = parsed
 
+func _ui_scale(view: Vector2) -> float:
+	return clampf(minf(view.x / 900.0, view.y / 1600.0), 0.5, 1.35)
+
 func _refresh_geometry() -> void:
 	var view := get_viewport_rect().size
-	board_size = minf(view.x * 0.86, view.y * 0.49)
-	board_size = maxf(390.0, board_size)
+	var ui_scale := _ui_scale(view)
+	board_size = maxf(240.0, minf(view.x * 0.86, view.y * 0.49))
 	var origin := Vector2((view.x - board_size) * 0.5, (view.y - board_size) * 0.52)
 	board_rect = Rect2(origin, Vector2(board_size, board_size))
 	pocket_radius = board_size * 0.064
 	piece_radius = board_size * 0.018
 	striker_radius = board_size * 0.028
 	striker_spawn = Vector2(board_rect.get_center().x, board_rect.position.y + board_size * 0.81)
-	reset_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 100.0), Vector2(250.0, 58.0))
-	board_button_rect = Rect2(Vector2(view.x * 0.25 - 112.0, view.y - 180.0), Vector2(224.0, 56.0))
-	striker_button_rect = Rect2(Vector2(view.x * 0.75 - 112.0, view.y - 180.0), Vector2(224.0, 56.0))
-	mode_button_rect = Rect2(Vector2(view.x * 0.25 - 112.0, view.y - 260.0), Vector2(224.0, 56.0))
-	game_mode_button_rect = Rect2(Vector2(view.x * 0.75 - 112.0, view.y - 260.0), Vector2(224.0, 56.0))
+
+	# Anchor the controls to the board instead of using fixed screen offsets.
+	var button_size := Vector2(minf(224.0 * ui_scale, view.x * 0.46), 56.0 * ui_scale)
+	var first_row_y := board_rect.end.y + board_size * 0.18
+	var second_row_y := board_rect.end.y + board_size * 0.28
+	var left_x := view.x * 0.25 - button_size.x * 0.5
+	var right_x := view.x * 0.75 - button_size.x * 0.5
+	mode_button_rect = Rect2(Vector2(left_x, first_row_y), button_size)
+	game_mode_button_rect = Rect2(Vector2(right_x, first_row_y), button_size)
+	board_button_rect = Rect2(Vector2(left_x, second_row_y), button_size)
+	striker_button_rect = Rect2(Vector2(right_x, second_row_y), button_size)
+	var reset_size := Vector2(minf(250.0 * ui_scale, view.x * 0.62), 58.0 * ui_scale)
+	reset_rect = Rect2(Vector2(view.x * 0.5 - reset_size.x * 0.5, board_rect.end.y + board_size * 0.38), reset_size)
 
 func _load_striker_catalog() -> void:
 	var file := FileAccess.open("res://data/striker_catalog.json", FileAccess.READ)
@@ -626,23 +637,24 @@ func _draw() -> void:
 
 func _draw_hud(view: Vector2) -> void:
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(0, 75), "BOARD MASTERS", HORIZONTAL_ALIGNMENT_CENTER, view.x, 34, Color("#F5E7C8"))
-	draw_string(font, Vector2(0, 112), "CARROM ARENA", HORIZONTAL_ALIGNMENT_CENTER, view.x, 17, Color("#9EB8C8"))
+	var scale := _ui_scale(view)
+	draw_string(font, Vector2(0, 75.0 * scale), "BOARD MASTERS", HORIZONTAL_ALIGNMENT_CENTER, view.x, maxi(16, roundi(34.0 * scale)), Color("#F5E7C8"))
+	draw_string(font, Vector2(0, 112.0 * scale), "CARROM ARENA", HORIZONTAL_ALIGNMENT_CENTER, view.x, maxi(11, roundi(17.0 * scale)), Color("#9EB8C8"))
 	var turn_label := "YOUR TURN" if player_turn == WHITE else "AI OPPONENT"
 	if local_two_player:
 		turn_label = "PLAYER 1 TURN" if player_turn == WHITE else "PLAYER 2 TURN"
 	if game_over:
 		turn_label = "MATCH COMPLETE"
-	draw_string(font, Vector2(30, 190), turn_label, HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 22, Color("#F1C978"))
+	draw_string(font, Vector2(30.0 * scale, 190.0 * scale), turn_label, HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(12, roundi(22.0 * scale)), Color("#F1C978"))
 	var first_label := "PLAYER 1" if local_two_player else "YOU"
 	var second_label := "PLAYER 2" if local_two_player else "OPPONENT"
-	draw_string(font, Vector2(30, 230), first_label + "  %d" % scores[WHITE], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 26, Color("#F5F2E9"))
-	draw_string(font, Vector2(30, 265), second_label + "  %d" % scores[BLACK], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 20, Color("#B7C6D0"))
-	draw_string(font, Vector2(30, 305), "MATCHES  %d    WINS  %d    XP  %d" % [matches_played, matches_won, practice_xp], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 16, Color("#7FA8B9"))
+	draw_string(font, Vector2(30.0 * scale, 230.0 * scale), first_label + "  %d" % scores[WHITE], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(13, roundi(26.0 * scale)), Color("#F5F2E9"))
+	draw_string(font, Vector2(30.0 * scale, 265.0 * scale), second_label + "  %d" % scores[BLACK], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(11, roundi(20.0 * scale)), Color("#B7C6D0"))
+	draw_string(font, Vector2(30.0 * scale, 305.0 * scale), "MATCHES  %d    WINS  %d    XP  %d" % [matches_played, matches_won, practice_xp], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(10, roundi(16.0 * scale)), Color("#7FA8B9"))
 	var timer_label := "TIME  %.0f" % maxf(0.0, turn_time_remaining)
 	var striker_data := _selected_striker()
-	draw_string(font, Vector2(30, 337), "%s  F%.2f  A%.2f  T%.0f" % [String(striker_data.get("name", "Classic")), float(striker_data.get("force", 1.0)), float(striker_data.get("aim", 1.0)), float(striker_data.get("time", 20))], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 15, Color("#D4B9A0"))
-	draw_string(font, Vector2(view.x - 140.0, 190), timer_label, HORIZONTAL_ALIGNMENT_RIGHT, 110.0, 18, Color("#F1C978"))
+	draw_string(font, Vector2(30.0 * scale, 352.0 * scale), "%s  F%.2f  A%.2f  T%.0f" % [String(striker_data.get("name", "Classic")), float(striker_data.get("force", 1.0)), float(striker_data.get("aim", 1.0)), float(striker_data.get("time", 20))], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(9, roundi(15.0 * scale)), Color("#D4B9A0"))
+	draw_string(font, Vector2(view.x - 140.0 * scale, 190.0 * scale), timer_label, HORIZONTAL_ALIGNMENT_RIGHT, 110.0 * scale, maxi(10, roundi(18.0 * scale)), Color("#F1C978"))
 
 func _draw_board() -> void:
 	var felt := _theme_color("felt", "#197A63")
@@ -669,7 +681,7 @@ func _draw_board() -> void:
 		draw_circle(pocket, pocket_radius * 1.20, Color("#D4B57A"))
 		draw_circle(pocket, pocket_radius, Color("#081016"))
 		draw_circle(pocket, pocket_radius * 0.66, Color("#020609"))
-	draw_string(ThemeDB.fallback_font, Vector2(board_rect.position.x, board_rect.end.y + 35.0), "DRAG BACK TO AIM  •  RELEASE TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, board_size, 16, Color("#BBD1D9"))
+	draw_string(ThemeDB.fallback_font, Vector2(board_rect.position.x, board_rect.end.y + board_size * 0.045), "DRAG BACK TO AIM  •  RELEASE TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, board_size, maxi(10, roundi(board_size * 0.021)), Color("#BBD1D9"))
 
 func _draw_pieces() -> void:
 	for piece in pieces:
@@ -721,33 +733,41 @@ func _draw_aim_guide() -> void:
 		draw_circle(dot, 3.2, Color("#FFF0BD"))
 
 func _draw_controls(view: Vector2) -> void:
+	var scale := _ui_scale(view)
+	var outline := maxf(1.0, 2.0 * scale)
+	var mode_font := maxi(10, roundi(16.0 * scale))
+	var detail_font := maxi(9, roundi(14.0 * scale))
+
 	draw_rect(game_mode_button_rect, Color("#6A3E64"), true)
-	draw_rect(game_mode_button_rect, Color("#DAB6D4"), false, 2.0)
+	draw_rect(game_mode_button_rect, Color("#DAB6D4"), false, outline)
 	var game_mode_label := "DISC POOL" if match_mode == MODE_DISC_POOL else "CLASSIC CARROM"
-	draw_string(ThemeDB.fallback_font, Vector2(game_mode_button_rect.position.x, game_mode_button_rect.position.y + 36.0), game_mode_label, HORIZONTAL_ALIGNMENT_CENTER, game_mode_button_rect.size.x, 16, Color("#F7E8F1"))
+	draw_string(ThemeDB.fallback_font, Vector2(game_mode_button_rect.position.x, game_mode_button_rect.position.y + game_mode_button_rect.size.y * 0.66), game_mode_label, HORIZONTAL_ALIGNMENT_CENTER, game_mode_button_rect.size.x, mode_font, Color("#F7E8F1"))
 
 	draw_rect(mode_button_rect, Color("#2C5360"), true)
-	draw_rect(mode_button_rect, Color("#A8D1D7"), false, 2.0)
+	draw_rect(mode_button_rect, Color("#A8D1D7"), false, outline)
 	var mode_label := "LOCAL 2 PLAYERS" if local_two_player else "VS OFFLINE AI"
-	draw_string(ThemeDB.fallback_font, Vector2(mode_button_rect.position.x, mode_button_rect.position.y + 36.0), mode_label, HORIZONTAL_ALIGNMENT_CENTER, mode_button_rect.size.x, 16, Color("#F4E8CD"))
+	draw_string(ThemeDB.fallback_font, Vector2(mode_button_rect.position.x, mode_button_rect.position.y + mode_button_rect.size.y * 0.66), mode_label, HORIZONTAL_ALIGNMENT_CENTER, mode_button_rect.size.x, mode_font, Color("#F4E8CD"))
 
 	draw_rect(board_button_rect, Color("#24485A"), true)
-	draw_rect(board_button_rect, Color("#8FB9C7"), false, 2.0)
+	draw_rect(board_button_rect, Color("#8FB9C7"), false, outline)
 	var board_name := "CLASSIC BOARD"
 	if board_catalog.size() > 0:
 		board_name = String(board_catalog[board_index].get("name", board_name)).to_upper()
-	draw_string(ThemeDB.fallback_font, Vector2(board_button_rect.position.x, board_button_rect.position.y + 35.0), "BOARD " + board_name, HORIZONTAL_ALIGNMENT_CENTER, board_button_rect.size.x, 14, Color("#F4E8CD"))
+	draw_string(ThemeDB.fallback_font, Vector2(board_button_rect.position.x, board_button_rect.position.y + board_button_rect.size.y * 0.66), "BOARD " + board_name, HORIZONTAL_ALIGNMENT_CENTER, board_button_rect.size.x, detail_font, Color("#F4E8CD"))
 
 	draw_rect(striker_button_rect, Color("#6A4A30"), true)
-	draw_rect(striker_button_rect, Color("#E7C18B"), false, 2.0)
+	draw_rect(striker_button_rect, Color("#E7C18B"), false, outline)
 	var striker_name := String(_selected_striker().get("name", "Classic")).to_upper()
-	draw_string(ThemeDB.fallback_font, Vector2(striker_button_rect.position.x, striker_button_rect.position.y + 35.0), "STRIKER " + striker_name, HORIZONTAL_ALIGNMENT_CENTER, striker_button_rect.size.x, 14, Color("#FFF0D8"))
+	draw_string(ThemeDB.fallback_font, Vector2(striker_button_rect.position.x, striker_button_rect.position.y + striker_button_rect.size.y * 0.66), "STRIKER " + striker_name, HORIZONTAL_ALIGNMENT_CENTER, striker_button_rect.size.x, detail_font, Color("#FFF0D8"))
 
 	draw_rect(reset_rect, Color("#C18A3D"), true)
-	draw_rect(reset_rect, Color("#F3D89A"), false, 2.0)
-	draw_string(ThemeDB.fallback_font, Vector2(reset_rect.position.x, reset_rect.position.y + 38.0), "NEW MATCH", HORIZONTAL_ALIGNMENT_CENTER, reset_rect.size.x, 19, Color("#101C26"))
-	draw_string(ThemeDB.fallback_font, Vector2(20, 375.0), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 15, Color("#DCE7E8"))
-	draw_string(ThemeDB.fallback_font, Vector2(20, 403.0), "MOVE STRIKER ON BASELINE  •  DRAG BACK TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 13, Color("#8CAEBB"))
+	draw_rect(reset_rect, Color("#F3D89A"), false, outline)
+	draw_string(ThemeDB.fallback_font, Vector2(reset_rect.position.x, reset_rect.position.y + reset_rect.size.y * 0.66), "NEW MATCH", HORIZONTAL_ALIGNMENT_CENTER, reset_rect.size.x, maxi(12, roundi(19.0 * scale)), Color("#101C26"))
+
+	var status_y := board_rect.position.y - 52.0 * scale
+	var hint_y := board_rect.position.y - 24.0 * scale
+	draw_string(ThemeDB.fallback_font, Vector2(20.0 * scale, status_y), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0 * scale, maxi(10, roundi(15.0 * scale)), Color("#DCE7E8"))
+	draw_string(ThemeDB.fallback_font, Vector2(20.0 * scale, hint_y), "MOVE STRIKER ON BASELINE  •  DRAG BACK TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0 * scale, maxi(9, roundi(13.0 * scale)), Color("#8CAEBB"))
 
 func _theme_color(key: String, fallback: String) -> Color:
 	if board_catalog.is_empty():
