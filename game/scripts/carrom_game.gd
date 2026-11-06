@@ -790,8 +790,8 @@ func _draw_hud(view: Vector2) -> void:
 	draw_string(font, Vector2(30.0 * scale, 190.0 * scale), turn_label, HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(12, roundi(22.0 * scale)), Color("#F1C978"))
 	var first_label := "PLAYER 1" if local_two_player else "YOU"
 	var second_label := "PLAYER 2" if local_two_player else "OPPONENT"
-	var first_value := scores[WHITE]
-	var second_value := scores[BLACK]
+	var first_value: int = scores[WHITE]
+	var second_value: int = scores[BLACK]
 	if match_mode == MODE_CHALLENGE:
 		first_label = "TARGETS LEFT"
 		second_label = "POCKETED"
