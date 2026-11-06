@@ -1,68 +1,65 @@
 # AI Game Factory — Board Masters Arena
 
-This public repository contains a first playable Godot 4.7.2 Carrom-style game slice, public reference research, model-routing configuration, video/text review helpers and a restricted CI repair agent.
+This public repository contains an original Godot 4.7.2 carrom-style game, evidence-based reference research, model routing, analysis helpers, automated CI, a restricted repair agent, a manual DSH game agent and an Android debug-export workflow.
 
-## Open the game
+## Current game build
 
 Open the `game/` folder in Godot 4.7.2 stable. Main scene: `game/scenes/main.tscn`.
 
 Current playable slice:
-- Touch and mouse drag-back aiming.
-- Moving discs, friction, cushion bounces and circle collisions.
-- Four pockets, basic scoring, a striker-pocket foul and simplified queen-cover logic.
-- A simple local AI opponent.
-- Local two-player pass-and-play on one device.
-- 50 selectable original board colour/palette themes.
-- Portrait-friendly layout.
+- Classic Carrom (18 discs + queen) and Disc Pool (12 discs).
+- Touch aiming, striker baseline placement, disc collision, friction, cushion bounce and four pockets.
+- Simplified scoring, foul return and queen-cover rules.
+- Offline AI and same-device local two-player.
+- 50 original board palettes.
+- 24 original strikers with Force, Aim and Time stats.
+- XP unlocks, turn timer and local profile save.
 
-This is a playable vertical slice, not the finished commercial game. It still needs complete carrom rules, reviewed physics tuning, 1v1/2v2 online services, accounts, cloud saves, full inventory, shop, purchase verification, rewarded ads, complete menus, final 3D art/audio, Android export and real-device QA.
+This is a real playable starting point, not a complete commercial game or a confirmed APK. Full carrom rules, full power collection, polished 3D-look assets, animation/audio, online 1v1/2v2, accounts, cloud save, friends/leaderboards, shop, server-validated purchases, rewarded ads, final AAB and phone QA remain development milestones.
 
-## Reference and clean-room boundary
+## Workflows
 
-Use Miniclip Carrom Pool only as a public reference for observable gameplay patterns and feature research. Do not reuse its source code, name/logo, text, artwork, sound, private APIs, player data, APK contents or extracted assets. All shipping art and code must be original or properly licensed.
+- **Godot CI:** checks YAML/configuration, Python helpers, quota-pool tests, export preset, Godot import and gameplay smoke tests.
+- **Auto Repair Agent:** on a failed Godot CI run, NVIDIA Nemotron can propose a limited code patch and open a review pull request. It cannot change workflows/secrets or merge.
+- **DSH Game Agent:** manual Actions workflow. Provide a scoped task; DSH headless uses NVIDIA Nemotron in a disposable runner and opens a review PR. It has not yet been successfully run end-to-end.
+- **Android Debug APK:** manual Actions workflow. It aims to export an arm64 debug APK and upload it as an artifact. The pipeline itself still needs a successful manual run and real-phone install test. It is not a signed Play Store AAB.
+
+## Current model routes
+
+- NVIDIA Nemotron 3 Ultra: deep planning and difficult code review.
+- NVIDIA Nemotron 3.5 Lightning: routine coding and repair.
+- Gemini 3.5 Flash-Lite / 3.1 Flash-Lite: video review.
+- Gemma 4 26B A4B / 31B: text reasoning.
+
+NVIDIA app-side cap: 30 requests/minute. Gemini supports two independent project pools only after the two API keys are confirmed to belong to different Google Cloud projects. Set Actions variable `GEMINI_PROJECTS_ARE_SEPARATE=true` after confirming this in Google AI Studio. The current app-side caps per project are:
+- Flash-Lite video review: 10 RPM, 500 requests/24h per selected model, 1,000 total.
+- Gemma 4 reasoning: 28 RPM, 14,000 requests/24h across the Gemma models.
+
+These are application safeguards based on your reported AI Studio quota, not provider guarantees. The local quota ledger round-robins new tasks between the two confirmed projects and does not retry another key after HTTP 429.
 
 ## Important files
 
-- `game/README.md` — playable scope and known gaps.
+- `game/README.md` — playable feature list and known limitations.
 - `research/carrom-pool/RESEARCH.md` — public reference research and unknowns.
-- `research/carrom-pool/FEATURE_MATRIX.csv` — evidence-based feature matrix.
-- `research/carrom-pool/SCREEN_CAPTURE_CHECKLIST.csv` — screen walkthrough checklist.
-- `research/carrom-pool/BOARD_PLAN_50.md` — 50 original board theme concepts.
+- `research/carrom-pool/FEATURE_MATRIX.csv` — feature/evidence matrix.
+- `research/carrom-pool/SCREEN_CAPTURE_CHECKLIST.csv` — app walkthrough checklist.
+- `research/carrom-pool/BOARD_PLAN_50.md` — 50 original board ideas.
+- `game/data/striker_catalog.json` — 24 striker stats, themes and XP unlocks.
 - `agents/CARROM_GAME_BRIEF.md` — product and technical brief.
 - `agents/GAME_AGENT_ROLES.md` — specialist agent roles.
-- `agents/AUTO_REPAIR_AGENT.md` — automatic CI repair design and limits.
-- `docs/MODEL_ROUTING.md` — model IDs, thinking settings and quota policy.
-- `config/model-routing.json` — machine-readable routing caps.
-- `config/dsh-profile-overlay.example.yml` — DSH Nemotron and REA MCP overlay example.
-- `docs/DSH_CONFIGURATION.md` — how to merge the DSH overlay into an existing profile.
-- `tools/gemini_video_review.py` — Gemini Flash-Lite video review helper.
-- `tools/gemma_reason.py` — Gemma 4 text reasoning helper.
+- `agents/AUTO_REPAIR_AGENT.md` — repair workflow limits.
+- `docs/MODEL_ROUTING.md` — model and quota configuration.
+- `docs/ANDROID_BUILD.md` — debug APK export instructions.
+- `config/dsh-profile-overlay.example.yml` — DSH Nemotron and optional REA MCP configuration.
+- `tools/gemini_video_review.py` — Gemini Flash-Lite video review.
+- `tools/gemma_reason.py` — Gemma 4 text reasoning.
+- `tools/google_quota.py` — dual-project quota ledger.
 
-## CI and auto-repair
+## Run the workflows
 
-- Godot CI downloads Godot 4.7.2, checks JSON/Python helper syntax, imports the project and runs gameplay smoke tests.
-- A failed Godot CI run can trigger the NVIDIA Nemotron repair agent.
-- The repair agent is limited to selected files under `game/`, validates its patch and opens a pull request.
-- It cannot edit workflows/secrets or merge its own PR. Human review and passing CI are required.
-- The repair agent only handles failures that CI can observe. It cannot automatically diagnose every device-only, online-server or design issue.
+GitHub → Actions → select the workflow:
+- Godot CI runs on pushes and pull requests.
+- DSH Game Agent takes a task input and creates a review PR.
+- Android Debug APK exports a phone-test build.
 
-For PR creation, check the repository Actions settings and allow GitHub Actions to create pull requests. Add `NVIDIA_API_KEY` in Actions Secrets to enable repair calls.
-
-## Model keys
-
-Add these secret names in Settings -> Secrets and variables -> Actions:
-- `NVIDIA_API_KEY`
-- `GEMINI_API_KEY_1`
-- `GEMINI_API_KEY_2`
-
-NVIDIA app-side request cap: 30 RPM. Gemini video app-side cap: 10 RPM, 500 requests per rolling 24h per configured video model, 1,000 total. Gemma 4 app-side cap requested: 28 RPM and 14,000 per rolling 24h per model. These are local safeguards, not provider quota guarantees. Google's Gemini quotas are project-scoped, so two keys in the same project do not double the quota.
-
-Never put live keys in repository files, commits, issues, workflow logs or this README.
-
-## Android and APK safety
-
-Never commit live API keys, Android signing keys, private account exports, player data or the commercial reference game's APK. Keep authorised APKs and private gameplay recordings outside this public repository. Do not upload decompiled proprietary code or extracted app assets.
-
-## Monetisation principles
-
-Use optional rewarded ads and clearly priced fixed-content cosmetics only. Any future purchase flow needs server-side receipt validation and adult/guardian approval. Do not add paid random-reward boxes or paid roulette. Never interrupt an active shot or match with an ad.
+Actions is allowed to create pull requests only for DSH and repair-agent review branches. Do not put API keys, Android keystores, private videos, player data or the commercial reference APK in this public repository.
