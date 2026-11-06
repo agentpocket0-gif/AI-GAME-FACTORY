@@ -1,0 +1,27 @@
+feature,area,priority,reference_status,our_game_status,notes
+Classic carrom gameplay,Gameplay,must,confirmed,planned,Independent physics and rules implementation
+Disc Pool,Gameplay,must,confirmed,planned,Distinct original rules and UI
+Free Style,Gameplay,should,confirmed,planned,Original scoring configuration
+2v2 online,Multiplayer,should,confirmed,planned,Only after server-authoritative testing
+Same-device play,Multiplayer,must,confirmed,planned,Local pass-and-play
+Offline play,Core,must,confirmed,planned,Define and test offline bot/practice scope
+Skill matchmaking,Online,should,confirmed,planned,No private protocol copying
+Friends and invites,Social,should,confirmed,planned,Unique IDs and safe invite flow
+Leaderboards,Social,could,confirmed,planned,League/friends/country/world
+Clubs and chat,Social,could,confirmed,planned,Moderation and privacy required
+Voice/video chat,Social,could,confirmed,not planned v1,High moderation and privacy cost
+50 original board skins,Customization,must,our target,planned,Not a claim about Miniclip board count
+Striker Force/Aim/Time,Equipment,must,confirmed,planned,Transparent balanced stats
+Striker powers,Equipment,should,confirmed,planned,Original abilities and published effects
+Puck cosmetics,Equipment,should,confirmed,planned,Cosmetic only
+Shot trails,Equipment,could,confirmed,planned,Cosmetic only
+Daily free reward,Progression,should,confirmed,planned,Fixed and transparent reward
+Rewarded video ads,Monetization,should,confirmed,planned,Optional with verified completion callback
+Banner ads,Monetization,could,unknown,not planned,Not confirmed in reviewed public sources
+Forced interstitial ads,Monetization,could,unknown,not planned,Avoid interrupting active matches
+Direct fixed-content cosmetics,Monetization,should,confirmed shop concept,planned,Clear fixed price and contents
+Paid random-reward boxes,Monetization,skip,random-item disclosure,excluded,Use transparent rewards instead
+Paid roulette,Monetization,skip,listed feature,excluded,No paid chance-based purchases
+Server-side receipt validation,Security,must,our requirement,planned,Never trust client purchase state
+Offline save/reconnect,Offline,must,our requirement,planned,Prevent duplicate reward grants
+Asset license manifest,Legal,must,our requirement,planned,Record source/license/attribution per asset
