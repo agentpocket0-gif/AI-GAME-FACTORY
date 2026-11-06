@@ -20,6 +20,7 @@ var selected_striker_index := 0
 var turn_time_remaining := 20.0
 var local_two_player := false
 var match_mode := MODE_CLASSIC
+var ai_difficulty := 1
 var matches_played := 0
 var matches_won := 0
 var practice_xp := 0
@@ -54,6 +55,7 @@ var is_paused := false
 var pause_panel_rect := Rect2()
 var resume_button_rect := Rect2()
 var pause_new_match_button_rect := Rect2()
+var difficulty_button_rect := Rect2()
 
 func _ready() -> void:
 	_load_board_catalog()
@@ -162,12 +164,14 @@ func _refresh_geometry() -> void:
 	striker_button_rect = Rect2(Vector2(right_x, second_row_y), button_size)
 	var reset_size := Vector2(minf(250.0 * ui_scale, view.x * 0.62), 58.0 * ui_scale)
 	reset_rect = Rect2(Vector2(view.x * 0.5 - reset_size.x * 0.5, board_rect.end.y + board_size * 0.38), reset_size)
-	var panel_size := Vector2(minf(view.x * 0.88, 500.0 * ui_scale + 90.0), minf(view.y * 0.52, 300.0 * ui_scale + 24.0))
+	var panel_size := Vector2(minf(view.x * 0.88, 500.0 * ui_scale + 90.0), minf(view.y * 0.56, maxf(320.0, 390.0 * ui_scale)))
 	pause_panel_rect = Rect2(view * 0.5 - panel_size * 0.5, panel_size)
 	var action_size := Vector2(panel_size.x * 0.78, maxf(42.0, 48.0 * ui_scale))
-	var resume_y := pause_panel_rect.position.y + panel_size.y * 0.43
+	var action_gap := maxf(8.0, 12.0 * ui_scale)
+	var resume_y := pause_panel_rect.position.y + panel_size.y * 0.36
 	resume_button_rect = Rect2(Vector2(view.x * 0.5 - action_size.x * 0.5, resume_y), action_size)
-	pause_new_match_button_rect = Rect2(Vector2(view.x * 0.5 - action_size.x * 0.5, resume_y + action_size.y + maxf(8.0, 14.0 * ui_scale)), action_size)
+	difficulty_button_rect = Rect2(Vector2(view.x * 0.5 - action_size.x * 0.5, resume_y + action_size.y + action_gap), action_size)
+	pause_new_match_button_rect = Rect2(Vector2(view.x * 0.5 - action_size.x * 0.5, resume_y + (action_size.y + action_gap) * 2.0), action_size)
 
 func _load_striker_catalog() -> void:
 	var file := FileAccess.open("res://data/striker_catalog.json", FileAccess.READ)
@@ -294,6 +298,9 @@ func _load_profile() -> void:
 	selected_striker_index = clampi(int(parsed.get("selected_striker_index", 0)), 0, maxi(0, striker_catalog.size() - 1))
 	match_mode = clampi(int(parsed.get("match_mode", MODE_CLASSIC)), MODE_CLASSIC, MODE_CHALLENGE)
 	local_two_player = bool(parsed.get("local_two_player", false))
+	ai_difficulty = clampi(int(parsed.get("ai_difficulty", 1)), 0, 2)
+	if match_mode == MODE_CHALLENGE:
+		local_two_player = false
 
 func _save_profile() -> void:
 	var profile := {
@@ -303,7 +310,8 @@ func _save_profile() -> void:
 		"practice_xp": practice_xp,
 		"selected_striker_index": selected_striker_index,
 		"match_mode": match_mode,
-		"local_two_player": local_two_player
+		"local_two_player": local_two_player,
+		"ai_difficulty": ai_difficulty
 	}
 	var file := FileAccess.open("user://player_profile.json", FileAccess.WRITE)
 	if file != null:
@@ -345,6 +353,11 @@ func _handle_press(point: Vector2) -> void:
 		if resume_button_rect.has_point(point):
 			is_paused = false
 			status_text = "Match resumed."
+			queue_redraw()
+		elif difficulty_button_rect.has_point(point):
+			ai_difficulty = (ai_difficulty + 1) % 3
+			status_text = "AI difficulty: " + _ai_difficulty_name()
+			_save_profile()
 			queue_redraw()
 		elif pause_new_match_button_rect.has_point(point):
 			reset_match()
@@ -757,8 +770,12 @@ func _bot_take_shot() -> void:
 	var direction := aim_point - start
 	if direction.length() < 1.0:
 		direction = Vector2.DOWN
+	var shot_speeds := [540.0, 780.0, 990.0]
+	var aim_errors := [0.22, 0.075, 0.012]
+	var difficulty_index := clampi(ai_difficulty, 0, 2)
+	direction = direction.normalized().rotated(randf_range(-aim_errors[difficulty_index], aim_errors[difficulty_index]))
 	striker["position"] = start
-	striker["velocity"] = direction.normalized() * 780.0
+	striker["velocity"] = direction * shot_speeds[difficulty_index]
 	_begin_shot()
 
 func _draw() -> void:
@@ -920,6 +937,15 @@ func _draw_controls(view: Vector2) -> void:
 	draw_string(ThemeDB.fallback_font, Vector2(20.0 * scale, status_y), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0 * scale, maxi(10, roundi(15.0 * scale)), Color("#DCE7E8"))
 	draw_string(ThemeDB.fallback_font, Vector2(20.0 * scale, hint_y), "MOVE STRIKER ON BASELINE  •  DRAG BACK TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0 * scale, maxi(9, roundi(13.0 * scale)), Color("#8CAEBB"))
 
+func _ai_difficulty_name() -> String:
+	match ai_difficulty:
+		0:
+			return "Easy"
+		1:
+			return "Normal"
+		_:
+			return "Hard"
+
 func _game_mode_name() -> String:
 	match match_mode:
 		MODE_DISC_POOL:
@@ -939,6 +965,9 @@ func _draw_pause_menu(view: Vector2) -> void:
 	draw_rect(resume_button_rect, Color("#2D806B"), true)
 	draw_rect(resume_button_rect, Color("#A6E0C5"), false, 2.0)
 	draw_string(font, Vector2(resume_button_rect.position.x, resume_button_rect.position.y + resume_button_rect.size.y * 0.68), "RESUME MATCH", HORIZONTAL_ALIGNMENT_CENTER, resume_button_rect.size.x, maxi(13, roundi(18.0 * _ui_scale(view))), Color.WHITE)
+	draw_rect(difficulty_button_rect, Color("#244F68"), true)
+	draw_rect(difficulty_button_rect, Color("#A4C9D9"), false, 2.0)
+	draw_string(font, Vector2(difficulty_button_rect.position.x, difficulty_button_rect.position.y + difficulty_button_rect.size.y * 0.68), "AI DIFFICULTY  " + _ai_difficulty_name().to_upper(), HORIZONTAL_ALIGNMENT_CENTER, difficulty_button_rect.size.x, maxi(13, roundi(17.0 * _ui_scale(view))), Color("#E6F3F5"))
 	draw_rect(pause_new_match_button_rect, Color("#8A5937"), true)
 	draw_rect(pause_new_match_button_rect, Color("#E9C58E"), false, 2.0)
 	draw_string(font, Vector2(pause_new_match_button_rect.position.x, pause_new_match_button_rect.position.y + pause_new_match_button_rect.size.y * 0.68), "NEW MATCH", HORIZONTAL_ALIGNMENT_CENTER, pause_new_match_button_rect.size.x, maxi(13, roundi(18.0 * _ui_scale(view))), Color("#FFF2D7"))
