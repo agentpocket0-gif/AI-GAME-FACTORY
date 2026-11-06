@@ -30,7 +30,10 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          # The legacy "tools" SDK package is no longer published.
+          packages: 'platform-tools'
 
       - name: Install Android API 36 platform
         run: |
