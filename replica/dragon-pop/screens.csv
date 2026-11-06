@@ -1,0 +1,14 @@
+screen_id,screen_name,entry_route,purpose,observed_components,states_seen,evidence,confidence
+S01,Launch/loading,App start,Initialize game,unknown,unknown,not captured,none
+S02,Home/title,After loading,Start or resume play,unknown,unknown,not captured,none
+S03,Campaign/level select,Home navigation,Choose level,progression implied but map unknown,unknown,Google Play description only,low
+S04,Gameplay board,Enter a level,Main match-3 loop,bubble field and shooter and current/next bubble and shot counter and target HUD,active puzzle,SocialPeta and GamersUnite captures,medium
+S05,Aim preview,Touch/drag on shooter,Choose shot direction,launcher and aiming direction/guide,aiming,SocialPeta and GamersUnite captures,medium
+S06,Match/drop event,Release shot,Resolve bubble group,match-3 rule confirmed and animation unknown,shot resolution,Google Play description,high for rule
+S07,Dragon rescue,Clear blocking bubbles,Complete rescue objective,hidden baby dragon objective,objective progress,Google Play description,high for concept
+S08,Booster action,Tap prop,Help player clear board,props exist but UI and inventory unknown,unknown,Google Play description,high for existence only
+S09,Win/result,Complete level,Reward stars,star reward confirmed and layout/thresholds unknown,unknown,Google Play description,high for reward concept
+S10,Pause/settings,Open pause/settings,Pause and configure,unknown,unknown,not captured,none
+S11,Ad/reward flow,Ad trigger,Monetization,Contains ads but placement and behavior unknown,unknown,Google Play listing,high for ads only
+S12,Shop/IAP,Shop entry,Purchase extras,not verified,unknown,not found in sources reviewed,none
+S13,Offline/resume,Disable network/background app,Continue without network,offline claim but resume behavior unknown,unknown,Google Play description,high for offline claim only
