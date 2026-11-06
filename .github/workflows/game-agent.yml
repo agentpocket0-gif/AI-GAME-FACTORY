@@ -49,9 +49,11 @@ jobs:
           fi
           export DSH_HOME
           dsh --profile headless --dump-default-config > /dev/null
-          dsh plugin --profile headless add @deepseek-ai/dsh-llm-pi-ai@0.2.2-rc.1
           PROFILE_DIR="$DSH_HOME/profiles/headless"
           test -d "$PROFILE_DIR"
+          cd "$PROFILE_DIR"
+          pnpm add --save-exact @deepseek-ai/dsh-llm-pi-ai@0.2.2-rc.1
+          cd "$GITHUB_WORKSPACE"
           cp config/dsh-profile-overlay.example.yml "$PROFILE_DIR/cordis.patch.yml"
           echo "DSH_HOME=$DSH_HOME" >> "$GITHUB_ENV"
 
