@@ -13,6 +13,7 @@ Current playable slice:
 - Offline AI and same-device local two-player.
 - 50 original board palettes.
 - 24 original strikers with Force, Aim and Time stats.
+- Animated impact sparks and pocket-ring feedback.
 - XP unlocks, turn timer and local profile save.
 
 This is a real playable starting point, not a complete commercial game or a confirmed APK. Full carrom rules, full power collection, polished 3D-look assets, animation/audio, online 1v1/2v2, accounts, cloud save, friends/leaderboards, shop, server-validated purchases, rewarded ads, final AAB and phone QA remain development milestones.
