@@ -1,6 +1,11 @@
 name: Android Debug APK
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "game/**"
+      - ".github/workflows/android-debug.yml"
   workflow_dispatch:
 
 permissions:
