@@ -50,6 +50,7 @@
 # are installed in the same environment as the APK being analysed.
 - id: mcp-rea
   name: '@deepseek-ai/dsh-mcp-client'
+  disabled: true
   config:
     serverName: rea
     transport: stdio
