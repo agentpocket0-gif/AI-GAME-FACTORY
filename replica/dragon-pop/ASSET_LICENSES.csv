@@ -1,0 +1,8 @@
+asset_id,asset_type,source,creator,license,status,allowed_use,notes
+A001,Creature mascot,Original project design,generative or commissioned artist,Project-owned or expressly licensed,planned,Use after rights check,Must have a distinct silhouette and personality
+A002,Bubble sprites,Original procedural or generated art,Project-created,Project-owned or expressly licensed,planned,Use in game,Do not trace target art
+A003,World backgrounds,Original artwork,Project-created,Project-owned or expressly licensed,planned,Use in game,Do not reuse screenshots or target backgrounds
+A004,Sound effects,Original synthesis or permissive library,Project-created or credited creator,Verify each file,planned,Use after license check,Do not extract target audio
+A005,Music,Original composition or permissive library,Project-created or credited creator,Verify each file,planned,Use after license check,No target recordings
+A006,Fonts,Open font package,Font author,Open font license,planned,Use with required notices,Do not copy proprietary fonts
+A007,Icons,Lucide or another open icon set,Upstream project,MIT/ISC or stated license,planned,Use with license notice,Use new layouts and labels
