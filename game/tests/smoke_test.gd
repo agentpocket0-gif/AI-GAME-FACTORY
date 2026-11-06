@@ -28,6 +28,29 @@ func _run() -> void:
 	if not _check(game.get("striker_catalog").size() == 24, "All 24 striker designs must load"):
 		return
 
+	# The playable board and all touch controls must remain inside the viewport.
+	var visible_board: Rect2 = game.get("board_rect")
+	var visible_mode_button: Rect2 = game.get("game_mode_button_rect")
+	var visible_player_button: Rect2 = game.get("mode_button_rect")
+	var visible_board_button: Rect2 = game.get("board_button_rect")
+	var visible_striker_button: Rect2 = game.get("striker_button_rect")
+	var visible_reset_button: Rect2 = game.get("reset_rect")
+	var visible_size: Vector2 = game.get_viewport_rect().size
+	if not _check(visible_mode_button.position.y >= visible_board.end.y, "Mode selector must sit below the board"):
+		return
+	if not _check(visible_player_button.position.y >= visible_board.end.y, "Player selector must sit below the board"):
+		return
+	if not _check(visible_board_button.position.y >= visible_mode_button.end.y, "Board selector must sit below the mode row"):
+		return
+	if not _check(visible_striker_button.position.y >= visible_mode_button.end.y, "Striker selector must sit below the mode row"):
+		return
+	if not _check(visible_reset_button.position.y >= visible_board_button.end.y, "New Match must sit below the selector row"):
+		return
+	if not _check(visible_reset_button.end.y <= visible_size.y, "New Match button must remain on-screen"):
+		return
+	if not _check(visible_board.position.x >= 0.0 and visible_board.end.x <= visible_size.x, "Board must remain inside horizontal screen bounds"):
+		return
+
 	var striker_rect: Rect2 = game.get("striker_button_rect")
 	game.call("_handle_press", striker_rect.get_center())
 	if not _check(game.get("selected_striker_index") == 1, "Striker selector must choose the next unlocked striker"):
