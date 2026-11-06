@@ -12,6 +12,7 @@ var pieces: Array[Dictionary] = []
 var striker: Dictionary = {}
 var board_catalog: Array = []
 var board_index := 0
+var local_two_player := false
 var board_rect := Rect2()
 var board_size := 640.0
 var pocket_radius := 40.0
@@ -34,6 +35,7 @@ var game_over := false
 var status_text := "Drag back from the striker, then release to shoot."
 var reset_rect := Rect2()
 var board_button_rect := Rect2()
+var mode_button_rect := Rect2()
 
 func _ready() -> void:
 	_load_board_catalog()
@@ -65,6 +67,7 @@ func _refresh_geometry() -> void:
 	striker_spawn = Vector2(board_rect.get_center().x, board_rect.position.y + board_size * 0.81)
 	reset_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 125.0), Vector2(250.0, 64.0))
 	board_button_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 205.0), Vector2(250.0, 60.0))
+	mode_button_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 285.0), Vector2(250.0, 60.0))
 
 func reset_match() -> void:
 	pieces.clear()
@@ -128,6 +131,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		queue_redraw()
 
 func _handle_press(point: Vector2) -> void:
+	if mode_button_rect.has_point(point):
+		local_two_player = not local_two_player
+		bot_delay = -1.0
+		status_text = "Local two-player mode selected." if local_two_player else "Play against the offline AI."
+		queue_redraw()
+		return
 	if reset_rect.has_point(point):
 		reset_match()
 		return
@@ -136,7 +145,7 @@ func _handle_press(point: Vector2) -> void:
 			board_index = (board_index + 1) % board_catalog.size()
 		queue_redraw()
 		return
-	if game_over or shot_active or player_turn != WHITE:
+	if game_over or shot_active or (not local_two_player and player_turn != WHITE):
 		return
 	if point.distance_to(striker["position"]) <= striker_radius * 3.2:
 		aiming = true
@@ -170,7 +179,7 @@ func _begin_shot() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not shot_active:
-		if player_turn == BLACK and not game_over:
+		if player_turn == BLACK and not game_over and not local_two_player:
 			if bot_delay < 0.0:
 				bot_delay = 0.85
 			else:
@@ -345,17 +354,33 @@ func _complete_turn() -> void:
 			status_text = "No own disc pocketed. Turn passed."
 
 	striker["position"] = _turn_spawn(player_turn)
-	if pieces.is_empty():
+	var white_left := _count_owner(WHITE)
+	var black_left := _count_owner(BLACK)
+	if white_left == 0 or black_left == 0:
 		game_over = true
-		status_text = "Match complete. Tap New Match to play again."
+		if white_left == 0 and black_left == 0:
+			status_text = "Draw. Tap New Match to play again."
+		elif white_left == 0:
+			status_text = "Black wins! Tap New Match to play again."
+		else:
+			status_text = "White wins! Tap New Match to play again."
+		queue_redraw()
+		return
 	elif player_turn == WHITE:
-		status_text += " Your turn."
+		status_text += " Player 1 turn." if local_two_player else " Your turn."
 	else:
-		status_text += " Opponent turn."
+		status_text += " Player 2 turn." if local_two_player else " Opponent turn."
 
-	if player_turn == BLACK and not game_over:
+	if player_turn == BLACK and not game_over and not local_two_player:
 		bot_delay = 0.85
 	queue_redraw()
+
+func _count_owner(owner: int) -> int:
+	var count := 0
+	for piece in pieces:
+		if piece["owner"] == owner:
+			count += 1
+	return count
 
 func _turn_spawn(owner: int) -> Vector2:
 	var y := board_rect.position.y + board_size * 0.19 if owner == BLACK else board_rect.position.y + board_size * 0.81
@@ -398,11 +423,15 @@ func _draw_hud(view: Vector2) -> void:
 	draw_string(font, Vector2(0, 75), "BOARD MASTERS", HORIZONTAL_ALIGNMENT_CENTER, view.x, 34, Color("#F5E7C8"))
 	draw_string(font, Vector2(0, 112), "CARROM ARENA", HORIZONTAL_ALIGNMENT_CENTER, view.x, 17, Color("#9EB8C8"))
 	var turn_label := "YOUR TURN" if player_turn == WHITE else "AI OPPONENT"
+	if local_two_player:
+		turn_label = "PLAYER 1 TURN" if player_turn == WHITE else "PLAYER 2 TURN"
 	if game_over:
 		turn_label = "MATCH COMPLETE"
 	draw_string(font, Vector2(30, 190), turn_label, HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 22, Color("#F1C978"))
-	draw_string(font, Vector2(30, 230), "YOU  %d" % scores[WHITE], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 26, Color("#F5F2E9"))
-	draw_string(font, Vector2(30, 265), "OPPONENT  %d" % scores[BLACK], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 20, Color("#B7C6D0"))
+	var first_label := "PLAYER 1" if local_two_player else "YOU"
+	var second_label := "PLAYER 2" if local_two_player else "OPPONENT"
+	draw_string(font, Vector2(30, 230), first_label + "  %d" % scores[WHITE], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 26, Color("#F5F2E9"))
+	draw_string(font, Vector2(30, 265), second_label + "  %d" % scores[BLACK], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 20, Color("#B7C6D0"))
 
 func _draw_board() -> void:
 	var felt := _theme_color("felt", "#197A63")
@@ -472,6 +501,10 @@ func _draw_aim_guide() -> void:
 		draw_circle(dot, 3.2, Color("#FFF0BD"))
 
 func _draw_controls(view: Vector2) -> void:
+	draw_rect(mode_button_rect, Color("#2C5360"), true)
+	draw_rect(mode_button_rect, Color("#A8D1D7"), false, 2.0)
+	var mode_label := "MODE  •  LOCAL 2 PLAYERS" if local_two_player else "MODE  •  VS OFFLINE AI"
+	draw_string(ThemeDB.fallback_font, Vector2(mode_button_rect.position.x, mode_button_rect.position.y + 38.0), mode_label, HORIZONTAL_ALIGNMENT_CENTER, mode_button_rect.size.x, 17, Color("#F4E8CD"))
 	draw_rect(board_button_rect, Color("#24485A"), true)
 	draw_rect(board_button_rect, Color("#8FB9C7"), false, 2.0)
 	var board_name := "CLASSIC BOARD"
@@ -481,7 +514,7 @@ func _draw_controls(view: Vector2) -> void:
 	draw_rect(reset_rect, Color("#C18A3D"), true)
 	draw_rect(reset_rect, Color("#F3D89A"), false, 2.0)
 	draw_string(ThemeDB.fallback_font, Vector2(reset_rect.position.x, reset_rect.position.y + 41.0), "NEW MATCH", HORIZONTAL_ALIGNMENT_CENTER, reset_rect.size.x, 21, Color("#101C26"))
-	draw_string(ThemeDB.fallback_font, Vector2(20, view.y - 245.0), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 16, Color("#DCE7E8"))
+	draw_string(ThemeDB.fallback_font, Vector2(20, 320.0), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 16, Color("#DCE7E8"))
 
 func _theme_color(key: String, fallback: String) -> Color:
 	if board_catalog.is_empty():
