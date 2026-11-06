@@ -16,6 +16,7 @@ This folder contains an original, offline-first carrom-style playable slice.
 - 50 original board colour/material palettes.
 - 24 original striker designs with Force, Aim and Time values.
 - Animated collision sparks and expanding pocket rings, with automatic effect cleanup.
+- Pause overlay with frozen turn clock, resume and new-match actions; Android Back/Escape toggle.
 - Initial strikers unlock through XP milestones; no paid stat advantages.
 - Local profile save at `user://player_profile.json` for selected board/striker, mode, matches, wins and XP.
 
