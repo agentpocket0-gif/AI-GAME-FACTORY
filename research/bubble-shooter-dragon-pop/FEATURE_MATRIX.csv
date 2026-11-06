@@ -1,0 +1,25 @@
+feature,area,priority,reference_status,implementation_status,evidence_or_unknown
+Portrait bubble-shooter playfield,gameplay,must,partially confirmed,not started,Google Play screenshots
+Aim and shoot,gameplay,must,confirmed at description level,not started,Store says aim and match
+Match 3 or more same-color bubbles,gameplay,must,confirmed,not started,Google Play description
+Connected-cluster removal,gameplay,must,inferred; exact connectivity unknown,not started,Must verify via gameplay
+Reveal/rescue dragon objective,gameplay,must,confirmed at description level,not started,Google Play description
+Current and next bubble display,gameplay,should,visually observed,not started,Store screenshots show two launcher bubbles
+Wall bounce aiming,gameplay,should,unknown,not started,Needs runtime walkthrough
+Shot budget / move counter,gameplay,should,unknown,not started,Needs runtime walkthrough
+Booster/prop system,gameplay,must,confirmed at broad level,not started,Exact booster inventory unknown
+Level star rating,progression,must,confirmed at broad level,not started,Exact thresholds unknown
+Level map / progression,progression,must,unknown,not started,Needs runtime walkthrough
+Pause screen,UI,should,unknown,not started,Needs runtime walkthrough
+Settings and complete mute behavior,UI,must,unknown,not started,Review reports mute issue; layout unknown
+Level win screen,UI,must,partially confirmed,not started,Stars are confirmed; exact layout unknown
+Level fail / retry / continue,UI,should,unknown,not started,Needs runtime walkthrough
+Offline play,platform,must,confirmed at store metadata level,not started,Google Play labels Offline
+Local save and recovery,platform,must,unknown,not started,Must verify
+Ad placements,monetization,should,ads declared; placements unknown,not started,Contains ads on Google Play
+Rewarded ads,monetization,should,unknown,not started,No verified evidence yet
+In-app purchases,monetization,could,unknown,not started,Do not assume IAP exists
+Original art,art,must,not applicable,not started,All artwork must be newly created
+Original sound and music,audio,should,not applicable,not started,Create or license original audio
+Level solvability validator,quality,must,not applicable,not started,New project quality requirement
+Touch input and responsive layout,platform,must,partially confirmed,not started,Android portrait screenshots
