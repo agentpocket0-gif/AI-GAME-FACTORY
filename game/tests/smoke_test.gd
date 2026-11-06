@@ -259,6 +259,26 @@ func _run() -> void:
 	if not _check(int(cover_scores[0]) == 4, "A covered queen must award exactly three bonus points"):
 		return
 
+	# Pause menu must freeze gameplay, resume safely and allow a deliberate new match.
+	game.call("reset_match")
+	var menu_button: Rect2 = game.get("reset_rect")
+	game.call("_handle_press", menu_button.get_center())
+	if not _check(game.get("is_paused") == true, "Pause/Menu control must open the pause overlay"):
+		return
+	var frozen_timer := float(game.get("turn_time_remaining"))
+	game.call("_physics_process", 1.0)
+	if not _check(is_equal_approx(float(game.get("turn_time_remaining")), frozen_timer), "Paused match must freeze the turn timer"):
+		return
+	var resume_button: Rect2 = game.get("resume_button_rect")
+	game.call("_handle_press", resume_button.get_center())
+	if not _check(game.get("is_paused") == false, "Resume control must close the pause overlay"):
+		return
+	game.call("_handle_press", menu_button.get_center())
+	var new_match_button: Rect2 = game.get("pause_new_match_button_rect")
+	game.call("_handle_press", new_match_button.get_center())
+	if not _check(game.get("is_paused") == false and game.get("pieces").size() == 19, "New Match from pause menu must reset the board"):
+		return
+
 	# Pocket rings and hit sparks must be created, animated and removed safely.
 	game.call("_spawn_pocket_effect", Vector2(120.0, 120.0), Color("#F1C978"))
 	var effects_after_pocket: Array = game.get("visual_effects")
@@ -279,5 +299,5 @@ func _run() -> void:
 	if not _check(FileAccess.file_exists("user://player_profile.json"), "Profile must be saved locally"):
 		return
 
-	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI aim, foul penalties, queen cover rules and local save, animated collision sparks and pocket rings")
+	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI aim, foul penalties, queen cover rules and local save, pause/resume flow, animated collision sparks and pocket rings")
 	quit(0)
