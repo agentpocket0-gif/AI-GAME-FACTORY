@@ -1,0 +1,66 @@
+name: Auto Repair Agent
+
+on:
+  workflow_run:
+    workflows: ["Godot CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: ai-auto-repair-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  diagnose-and-open-fix:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      !startsWith(github.event.workflow_run.head_branch, 'bot/auto-repair-') &&
+      github.event.workflow_run.run_attempt <= 2
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout failed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: true
+
+      - name: Download failed logs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed > "$RUNNER_TEMP/failed-ci.log"
+          test -s "$RUNNER_TEMP/failed-ci.log"
+
+      - name: Ask NVIDIA repair agent for a narrow patch
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          FAILURE_LOG: ${{ runner.temp }}/failed-ci.log
+        run: |
+          if [ -z "$NVIDIA_API_KEY" ]; then
+            echo "::error::NVIDIA_API_KEY is not configured. No files changed."
+            exit 1
+          fi
+          python3 tools/ai_repair.py "$FAILURE_LOG"
+
+      - name: Create repair pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ github.token }}
+          branch: bot/auto-repair-${{ github.event.workflow_run.id }}
+          base: main
+          title: "AI repair: Godot CI run ${{ github.event.workflow_run.id }}"
+          body: |
+            This PR contains a restricted code patch proposed by NVIDIA after a failed Godot CI run.
+
+            - Model output was treated as a patch, not executable commands.
+            - Changed files are limited to game scripts, scenes and tests.
+            - Godot CI must pass before merge.
+            - Review the diff and run device testing where needed.
+          commit-message: "fix: propose AI repair for failed Godot CI"
