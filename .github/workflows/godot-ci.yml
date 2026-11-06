@@ -71,9 +71,9 @@ jobs:
           preset = configparser.ConfigParser(interpolation=None, strict=False)
           if not preset.read("game/export_presets.cfg"):
               raise SystemExit("Android export preset could not be read")
-          if preset.get("preset.0", "platform") != "Android":
+          if preset.get("preset.0", "platform").strip('"') != "Android":
               raise SystemExit("Export preset 0 is not Android")
-          if preset.get("preset.0.options", "architectures/arm64-v8a") != "true":
+          if preset.get("preset.0.options", "architectures/arm64-v8a").strip('"').lower() != "true":
               raise SystemExit("Android export preset must enable arm64-v8a")
           print("YAML, DSH overlay and Android export preset are valid.")
           PY
