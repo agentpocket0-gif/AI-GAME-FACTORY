@@ -1,27 +1,20 @@
 # Gemini gameplay video review
 
-This tool sends a private gameplay recording from your own game to Gemini and saves a time-stamped UX/gameplay report.
+This tool analyses a private MP4/MOV/WEBM recording of our own game and writes a timestamped UX/gameplay defect report.
 
 Models:
 - Primary: `gemini-3.5-flash-lite`
 - Fallback: `gemini-3.1-flash-lite`
-- Thinking level: HIGH
+- Thinking: HIGH
 - Upload: Gemini Files API
 
-Both Google model pages document video and image input plus thinking support. Gemma is not used for video in this helper.
-
-Install the dependency:
+Run:
 
     python -m pip install -r requirements.txt
+    python tools/gemini_video_review.py /path/to/our-gameplay.mp4
 
-Set `GEMINI_API_KEY_1` in the private runtime, then run:
+Two API keys from distinct projects can be used as independent quota pools. Confirm the keys belong to different Google Cloud projects in AI Studio, then set `GEMINI_PROJECTS_ARE_SEPARATE=true` in the runtime environment. The helper round-robins separate new tasks; it does not retry another key after HTTP 429. The video fallback model uses the same selected project.
 
-    python tools/gemini_video_review.py /path/to/gameplay.mp4
+Per-project app-side limits from the user's reported quotas: 10 RPM total, 500 RPD for each Flash-Lite model and 1,000 total RPD. Two distinct projects therefore have an app-side ceiling of 20 RPM and 2,000 requests/24h. Actual provider quotas may be lower and should be verified in AI Studio.
 
-Optional output path:
-
-    python tools/gemini_video_review.py /path/to/gameplay.mp4 --output reports/video-review/review.md
-
-Do not commit private gameplay videos or account information to this public repository. The helper maintains a local quota ledger under `.cache/`, uses one request at a time and stops on 429/RESOURCE_EXHAUSTED without trying another key. The second key is retained for manually approved authentication recovery only; it is not a quota multiplier.
-
-The app-side guard caps video review at 10 requests/minute, 500 requests/24h for the primary model and 500 requests/24h for the fallback, with a total 1,000/24h cap. Google applies actual quotas per project and model; check AI Studio for your live limit.
+Private gameplay videos must not be committed to the public repo. Keep files in a private runtime.
