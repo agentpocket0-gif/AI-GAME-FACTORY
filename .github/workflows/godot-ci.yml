@@ -8,12 +8,14 @@ on:
       - "tools/**"
       - "config/**"
       - "requirements.txt"
+      - "tests/**"
       - ".github/workflows/godot-ci.yml"
       - ".github/workflows/auto-repair.yml"
       - "tools/**"
       - "config/**"
       - "requirements.txt"
       - "docs/**"
+      - "tests/**"
   pull_request:
     paths:
       - "game/**"
@@ -50,13 +52,14 @@ jobs:
       - name: Install Python model SDK
         run: python3 -m pip install --disable-pip-version-check -r requirements.txt
 
-      - name: Validate model configuration and all agent scripts
+      - name: Validate model configuration, DSH overlay and agent scripts
         run: |
           python3 -m json.tool config/model-routing.json > /dev/null
           python3 -c "import yaml; yaml.safe_load(open('config/dsh-profile-overlay.example.yml', encoding='utf-8'))"
           python3 -m py_compile tools/*.py
           python3 tools/gemini_video_review.py --help > /dev/null
           python3 tools/gemma_reason.py --help > /dev/null
+          python3 -m unittest discover -s tests/py -v
 
       - name: Import and parse project
         run: $GODOT_BIN --headless --path game --editor --quit
