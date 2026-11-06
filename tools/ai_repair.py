@@ -55,14 +55,15 @@ def ask_nvidia(context: str, key: str) -> str:
                 "content": "Diagnose the smallest source-level cause and propose a minimal safe unified diff.\n\n" + context,
             },
         ],
-        "temperature": 0.1,
+        "temperature": 1.0,
         "top_p": 0.95,
         "max_tokens": 8192,
         "stream": False,
-        "extra_body": {
-            "chat_template_kwargs": {"enable_thinking": True},
-            "reasoning_budget": 16384,
+        "chat_template_kwargs": {
+            "enable_thinking": True,
+            "force_nonempty_content": True,
         },
+        "reasoning_budget": 16384,
     }
     request = urllib.request.Request(
         API_URL,
