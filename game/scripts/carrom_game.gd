@@ -494,11 +494,13 @@ func _complete_turn() -> void:
 			if int(record["owner"]) == player_turn:
 				own_potted_count += 1
 		scores[player_turn] = maxi(0, scores[player_turn] - own_potted_count)
-		for i in range(potted_this_shot.size()):
-			var returned: Dictionary = potted_this_shot[i]
-			var angle := TAU * float(i) / maxf(1.0, float(potted_this_shot.size()))
-			var restore_pos := board_rect.get_center() + Vector2(cos(angle), sin(angle)) * piece_radius * 2.5
-			_add_disc(int(returned["owner"]), restore_pos)
+		for returned in potted_this_shot:
+			_add_disc(int(returned["owner"]), _find_restore_position())
+		# A striker/opponent-disc foul also costs one previously banked coin
+		# when this shot did not already return one of the player's own coins.
+		if own_potted_count == 0 and scores[player_turn] > 0:
+			scores[player_turn] -= 1
+			_add_disc(player_turn, _find_restore_position())
 		striker["position"] = _turn_spawn(player_turn)
 		player_turn = BLACK if player_turn == WHITE else WHITE
 	elif not own_piece_potted_this_shot:
@@ -538,6 +540,30 @@ func _complete_turn() -> void:
 		bot_delay = 0.85
 	queue_redraw()
 
+func _find_restore_position() -> Vector2:
+	var center := board_rect.get_center()
+	var min_x := board_rect.position.x + board_size * 0.13
+	var max_x := board_rect.end.x - board_size * 0.13
+	var min_y := board_rect.position.y + board_size * 0.13
+	var max_y := board_rect.end.y - board_size * 0.13
+	for ring in range(12):
+		var search_radius := minf(piece_radius * (2.55 + float(ring) * 1.1), board_size * 0.42)
+		for step in range(32):
+			var angle := TAU * float(step) / 32.0 + float(ring % 2) * PI / 32.0
+			var candidate := center + Vector2(cos(angle), sin(angle)) * search_radius
+			if candidate.x < min_x or candidate.x > max_x or candidate.y < min_y or candidate.y > max_y:
+				continue
+			var blocked := false
+			for piece in pieces:
+				var other_position: Vector2 = piece["position"]
+				var required_gap := piece_radius + float(piece["radius"]) + board_size * 0.004
+				if candidate.distance_to(other_position) < required_gap:
+					blocked = true
+					break
+			if not blocked:
+				return candidate
+	return center + Vector2(board_size * 0.18, 0.0)
+
 func _count_owner(owner: int) -> int:
 	var count := 0
 	for piece in pieces:
@@ -549,24 +575,41 @@ func _turn_spawn(owner: int) -> Vector2:
 	var y := board_rect.position.y + board_size * 0.19 if owner == BLACK else board_rect.position.y + board_size * 0.81
 	return Vector2(board_rect.get_center().x, y)
 
+func _choose_bot_aim_point() -> Vector2:
+	var start := _turn_spawn(BLACK)
+	var best_point := start + Vector2.DOWN * board_size * 0.28
+	var best_cost := INF
+	for piece in pieces:
+		if int(piece["owner"]) != BLACK:
+			continue
+		var target_position: Vector2 = piece["position"]
+		for pocket in _pocket_positions():
+			var pocket_vector: Vector2 = pocket - target_position
+			if pocket_vector.length() < 1.0:
+				continue
+			var pocket_direction := pocket_vector.normalized()
+			var impact_point := target_position - pocket_direction * (piece_radius + striker_radius * 0.9)
+			var shot_vector := impact_point - start
+			if shot_vector.length() < 1.0:
+				continue
+			var alignment := shot_vector.normalized().dot(pocket_direction)
+			var angle_penalty := (1.0 - alignment) * board_size * 0.42
+			var cost := shot_vector.length() + pocket_vector.length() * 0.22 + angle_penalty
+			if cost < best_cost:
+				best_cost = cost
+				best_point = impact_point
+	return best_point
+
 func _bot_take_shot() -> void:
 	bot_delay = -1.0
-	if pieces.is_empty():
+	if _count_owner(BLACK) == 0:
 		return
-	var target: Dictionary = pieces[0]
-	var best_distance := INF
-	for piece in pieces:
-		if piece["owner"] == BLACK:
-			var piece_position: Vector2 = piece["position"]
-			var distance: float = piece_position.distance_to(_turn_spawn(BLACK))
-			if distance < best_distance:
-				best_distance = distance
-				target = piece
-	var target_position: Vector2 = target["position"]
-	var direction: Vector2 = target_position - _turn_spawn(BLACK)
+	var start := _turn_spawn(BLACK)
+	var aim_point := _choose_bot_aim_point()
+	var direction := aim_point - start
 	if direction.length() < 1.0:
 		direction = Vector2.DOWN
-	striker["position"] = _turn_spawn(BLACK)
+	striker["position"] = start
 	striker["velocity"] = direction.normalized() * 780.0
 	_begin_shot()
 
@@ -642,11 +685,16 @@ func _draw_pieces() -> void:
 	_draw_striker()
 
 func _draw_token(pos: Vector2, radius: float, base: Color, shine: Color) -> void:
-	draw_circle(pos + Vector2(2.0, 4.0), radius * 1.06, Color(0.01, 0.02, 0.03, 0.45))
-	draw_circle(pos, radius, Color("#161E24"))
-	draw_circle(pos, radius * 0.88, base)
-	draw_arc(pos, radius * 0.68, 0.0, TAU, 48, shine, 2.0, true)
-	draw_circle(pos - Vector2(radius * 0.25, radius * 0.27), radius * 0.19, Color(1, 1, 1, 0.55))
+	# Layered rim, inset face and a soft specular highlight give each coin depth.
+	draw_circle(pos + Vector2(2.0, 4.0), radius * 1.08, Color(0.01, 0.02, 0.03, 0.48))
+	draw_circle(pos, radius * 1.04, Color("#0B1219"))
+	draw_circle(pos, radius * 0.96, Color("#C7A66A"))
+	draw_circle(pos, radius * 0.88, Color("#161E24"))
+	draw_circle(pos, radius * 0.80, base)
+	draw_arc(pos, radius * 0.69, 0.0, TAU, 56, shine, maxf(1.5, radius * 0.09), true)
+	draw_arc(pos, PI * 1.08, PI * 1.56, 28, 0, Color(1, 1, 1, 0.32), maxf(1.0, radius * 0.07), true)
+	draw_circle(pos - Vector2(radius * 0.25, radius * 0.28), radius * 0.18, Color(1, 1, 1, 0.68))
+	draw_circle(pos - Vector2(radius * 0.17, radius * 0.19), radius * 0.07, Color(1, 1, 1, 0.32))
 
 func _draw_striker() -> void:
 	var pos: Vector2 = striker["position"]
