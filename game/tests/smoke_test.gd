@@ -73,7 +73,7 @@ func _run() -> void:
 
 	# Potting an opponent disc is a foul and restores that disc before passing the turn.
 	game.call("reset_match")
-	var black_before := game.call("_count_owner", 1)
+	var black_before: int = int(game.call("_count_owner", 1))
 	var black_piece_index := -1
 	var pieces: Array = game.get("pieces")
 	for i in range(pieces.size()):
