@@ -6,6 +6,7 @@ const BLACK := 1
 const QUEEN := 2
 const MODE_CLASSIC := 0
 const MODE_DISC_POOL := 1
+const MODE_CHALLENGE := 2
 const FRICTION := 2.65
 const RESTITUTION := 0.91
 const STOP_SPEED := 7.0
@@ -238,13 +239,25 @@ func reset_match() -> void:
 			"radius": piece_radius * 1.04,
 			"kind": "queen"
 		})
-	else:
+	elif match_mode == MODE_DISC_POOL:
 		# Disc Pool: twelve discs, six per side, and no queen.
 		for i in range(6):
 			var angle_a := TAU * float(i) / 6.0
 			var angle_b := angle_a + PI / 6.0
 			_add_disc(WHITE, center + Vector2(cos(angle_a), sin(angle_a)) * piece_radius * 2.2)
 			_add_disc(BLACK, center + Vector2(cos(angle_b), sin(angle_b)) * piece_radius * 4.4)
+	else:
+		# Precision Challenge: twelve gold targets, cleared by one player.
+		for i in range(12):
+			var angle := TAU * float(i) / 12.0
+			var ring_radius := piece_radius * (2.7 if i % 2 == 0 else 4.5)
+			pieces.append({
+				"owner": WHITE,
+				"position": center + Vector2(cos(angle), sin(angle)) * ring_radius,
+				"velocity": Vector2.ZERO,
+				"radius": piece_radius * 1.08,
+				"kind": "target"
+			})
 	striker = {
 		"position": striker_spawn,
 		"velocity": Vector2.ZERO,
@@ -253,7 +266,7 @@ func reset_match() -> void:
 	}
 	striker["position"] = _turn_spawn(WHITE)
 	turn_time_remaining = _turn_time_limit()
-	status_text = "Your turn. Place the striker, pull back and release."
+	status_text = "Clear all 12 gold targets." if match_mode == MODE_CHALLENGE else "Your turn. Place the striker, pull back and release."
 	queue_redraw()
 
 func _add_disc(owner: int, position: Vector2) -> void:
@@ -279,7 +292,7 @@ func _load_profile() -> void:
 	matches_won = maxi(0, int(parsed.get("matches_won", 0)))
 	practice_xp = maxi(0, int(parsed.get("practice_xp", 0)))
 	selected_striker_index = clampi(int(parsed.get("selected_striker_index", 0)), 0, maxi(0, striker_catalog.size() - 1))
-	match_mode = clampi(int(parsed.get("match_mode", MODE_CLASSIC)), MODE_CLASSIC, MODE_DISC_POOL)
+	match_mode = clampi(int(parsed.get("match_mode", MODE_CLASSIC)), MODE_CLASSIC, MODE_CHALLENGE)
 	local_two_player = bool(parsed.get("local_two_player", false))
 
 func _save_profile() -> void:
@@ -342,9 +355,11 @@ func _handle_press(point: Vector2) -> void:
 		queue_redraw()
 		return
 	if game_mode_button_rect.has_point(point):
-		match_mode = MODE_DISC_POOL if match_mode == MODE_CLASSIC else MODE_CLASSIC
+		match_mode = (match_mode + 1) % 3
+		if match_mode == MODE_CHALLENGE:
+			local_two_player = false
 		reset_match()
-		status_text = "Disc Pool selected." if match_mode == MODE_DISC_POOL else "Classic Carrom selected."
+		status_text = _game_mode_name() + " selected."
 		_save_profile()
 		queue_redraw()
 		return
@@ -415,6 +430,11 @@ func _physics_process(delta: float) -> void:
 		if not game_over and not (player_turn == BLACK and not local_two_player):
 			turn_time_remaining -= delta
 			if turn_time_remaining <= 0.0:
+				if match_mode == MODE_CHALLENGE:
+					turn_time_remaining = _turn_time_limit()
+					status_text = "Clock reset. Keep practicing."
+					queue_redraw()
+					return
 				player_turn = BLACK if player_turn == WHITE else WHITE
 				striker["position"] = _turn_spawn(player_turn)
 				turn_time_remaining = _turn_time_limit()
@@ -618,6 +638,20 @@ func _complete_turn() -> void:
 		if status_text == "Shot in motion...":
 			status_text = "No own disc pocketed. Turn passed."
 
+	if match_mode == MODE_CHALLENGE:
+		player_turn = WHITE
+		striker["position"] = _turn_spawn(WHITE)
+		var targets_left := _count_owner(WHITE)
+		if targets_left == 0:
+			game_over = true
+			status_text = "Precision Challenge cleared! All targets pocketed."
+			_record_match_result(WHITE)
+		else:
+			turn_time_remaining = _turn_time_limit()
+			status_text = "Targets left: %d. Take another shot." % targets_left
+		queue_redraw()
+		return
+
 	striker["position"] = _turn_spawn(player_turn)
 	var white_left := _count_owner(WHITE)
 	var black_left := _count_owner(BLACK)
@@ -743,10 +777,12 @@ func _draw_hud(view: Vector2) -> void:
 	draw_string(font, Vector2(0, 75.0 * scale), "BOARD MASTERS", HORIZONTAL_ALIGNMENT_CENTER, view.x, maxi(16, roundi(34.0 * scale)), Color("#F5E7C8"))
 	draw_string(font, Vector2(0, 112.0 * scale), "CARROM ARENA", HORIZONTAL_ALIGNMENT_CENTER, view.x, maxi(11, roundi(17.0 * scale)), Color("#9EB8C8"))
 	var turn_label := "YOUR TURN" if player_turn == WHITE else "AI OPPONENT"
-	if local_two_player:
+	if match_mode == MODE_CHALLENGE:
+		turn_label = "PRECISION CHALLENGE"
+	elif local_two_player:
 		turn_label = "PLAYER 1 TURN" if player_turn == WHITE else "PLAYER 2 TURN"
 	if game_over:
-		turn_label = "MATCH COMPLETE"
+		turn_label = "CHALLENGE COMPLETE" if match_mode == MODE_CHALLENGE else "MATCH COMPLETE"
 	draw_string(font, Vector2(30.0 * scale, 190.0 * scale), turn_label, HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(12, roundi(22.0 * scale)), Color("#F1C978"))
 	var first_label := "PLAYER 1" if local_two_player else "YOU"
 	var second_label := "PLAYER 2" if local_two_player else "OPPONENT"
@@ -790,7 +826,9 @@ func _draw_pieces() -> void:
 		var owner: int = piece["owner"]
 		var pos: Vector2 = piece["position"]
 		var radius: float = piece["radius"]
-		if owner == QUEEN:
+		if String(piece.get("kind", "")) == "target":
+			_draw_token(pos, radius, Color("#C99534"), Color("#FFE6A0"))
+		elif owner == QUEEN:
 			_draw_token(pos, radius, Color("#E84D54"), Color("#FFE0B2"))
 		elif owner == WHITE:
 			_draw_token(pos, radius, Color("#F5E9CB"), Color("#FFFFFF"))
@@ -842,7 +880,7 @@ func _draw_controls(view: Vector2) -> void:
 
 	draw_rect(game_mode_button_rect, Color("#6A3E64"), true)
 	draw_rect(game_mode_button_rect, Color("#DAB6D4"), false, outline)
-	var game_mode_label := "DISC POOL" if match_mode == MODE_DISC_POOL else "CLASSIC CARROM"
+	var game_mode_label := _game_mode_name().to_upper()
 	draw_string(ThemeDB.fallback_font, Vector2(game_mode_button_rect.position.x, game_mode_button_rect.position.y + game_mode_button_rect.size.y * 0.66), game_mode_label, HORIZONTAL_ALIGNMENT_CENTER, game_mode_button_rect.size.x, mode_font, Color("#F7E8F1"))
 
 	draw_rect(mode_button_rect, Color("#2C5360"), true)
@@ -870,6 +908,15 @@ func _draw_controls(view: Vector2) -> void:
 	var hint_y := board_rect.position.y - 24.0 * scale
 	draw_string(ThemeDB.fallback_font, Vector2(20.0 * scale, status_y), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0 * scale, maxi(10, roundi(15.0 * scale)), Color("#DCE7E8"))
 	draw_string(ThemeDB.fallback_font, Vector2(20.0 * scale, hint_y), "MOVE STRIKER ON BASELINE  •  DRAG BACK TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0 * scale, maxi(9, roundi(13.0 * scale)), Color("#8CAEBB"))
+
+func _game_mode_name() -> String:
+	match match_mode:
+		MODE_DISC_POOL:
+			return "Disc Pool"
+		MODE_CHALLENGE:
+			return "Precision Challenge"
+		_:
+			return "Classic Carrom"
 
 func _draw_pause_menu(view: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, view), Color(0.01, 0.02, 0.035, 0.76), true)
