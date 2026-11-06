@@ -307,10 +307,12 @@ func _resolve_pair(a: Dictionary, b: Dictionary) -> void:
 	b["velocity"] = vb
 
 func _all_stopped() -> bool:
-	if (striker["velocity"] as Vector2).length() >= STOP_SPEED:
+	var striker_velocity: Vector2 = striker["velocity"]
+	if striker_velocity.length() >= STOP_SPEED:
 		return false
 	for piece in pieces:
-		if (piece["velocity"] as Vector2).length() >= STOP_SPEED:
+		var piece_velocity: Vector2 = piece["velocity"]
+		if piece_velocity.length() >= STOP_SPEED:
 			return false
 	return true
 
@@ -367,11 +369,13 @@ func _bot_take_shot() -> void:
 	var best_distance := INF
 	for piece in pieces:
 		if piece["owner"] == BLACK:
-			var distance: float = (piece["position"] as Vector2).distance_to(_turn_spawn(BLACK))
+			var piece_position: Vector2 = piece["position"]
+			var distance: float = piece_position.distance_to(_turn_spawn(BLACK))
 			if distance < best_distance:
 				best_distance = distance
 				target = piece
-	var direction: Vector2 = (target["position"] as Vector2) - _turn_spawn(BLACK)
+	var target_position: Vector2 = target["position"]
+	var direction: Vector2 = target_position - _turn_spawn(BLACK)
 	if direction.length() < 1.0:
 		direction = Vector2.DOWN
 	striker["position"] = _turn_spawn(BLACK)
@@ -453,7 +457,7 @@ func _draw_striker() -> void:
 	draw_circle(pos, striker_radius * 1.12, Color("#E5B85D"))
 	draw_circle(pos, striker_radius * 0.91, Color("#263A4A"))
 	draw_circle(pos, striker_radius * 0.63, Color("#E7E9E7"))
-	draw_circle(pos - Vector2(striker_radius * 0.19, striker_radius * 0.22), striker_radius * 0.18, Color("#FFFFFF", 0.75))
+	draw_circle(pos - Vector2(striker_radius * 0.19, striker_radius * 0.22), striker_radius * 0.18, Color(1.0, 1.0, 1.0, 0.75))
 
 func _draw_aim_guide() -> void:
 	var pull := aim_start - aim_current
