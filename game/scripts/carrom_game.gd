@@ -4,6 +4,8 @@ class_name CarromGame
 const WHITE := 0
 const BLACK := 1
 const QUEEN := 2
+const MODE_CLASSIC := 0
+const MODE_DISC_POOL := 1
 const FRICTION := 2.65
 const RESTITUTION := 0.91
 const STOP_SPEED := 7.0
@@ -13,6 +15,11 @@ var striker: Dictionary = {}
 var board_catalog: Array = []
 var board_index := 0
 var local_two_player := false
+var match_mode := MODE_CLASSIC
+var matches_played := 0
+var matches_won := 0
+var practice_xp := 0
+var potted_this_shot: Array[Dictionary] = []
 var board_rect := Rect2()
 var board_size := 640.0
 var pocket_radius := 40.0
@@ -36,9 +43,11 @@ var status_text := "Drag back from the striker, then release to shoot."
 var reset_rect := Rect2()
 var board_button_rect := Rect2()
 var mode_button_rect := Rect2()
+var game_mode_button_rect := Rect2()
 
 func _ready() -> void:
 	_load_board_catalog()
+	_load_profile()
 	_refresh_geometry()
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	reset_match()
@@ -68,9 +77,11 @@ func _refresh_geometry() -> void:
 	reset_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 125.0), Vector2(250.0, 64.0))
 	board_button_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 205.0), Vector2(250.0, 60.0))
 	mode_button_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 285.0), Vector2(250.0, 60.0))
+	game_mode_button_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 365.0), Vector2(250.0, 60.0))
 
 func reset_match() -> void:
 	pieces.clear()
+	potted_this_shot.clear()
 	scores = [0, 0]
 	player_turn = WHITE
 	aiming = false
@@ -83,33 +94,86 @@ func reset_match() -> void:
 	queen_captured = false
 	game_over = false
 	var center := board_rect.get_center()
-	var ring_radius := board_size * 0.112
-	for i in range(18):
-		var angle := TAU * float(i) / 18.0
-		var owner := WHITE if i % 2 == 0 else BLACK
-		var pos := center + Vector2(cos(angle), sin(angle)) * ring_radius
+	if match_mode == MODE_CLASSIC:
+		# Compact two-ring rack: nine discs per side and one queen.
+		for i in range(6):
+			var inner_angle := TAU * float(i) / 6.0
+			var inner_owner := WHITE if i % 2 == 0 else BLACK
+			var inner_pos := center + Vector2(cos(inner_angle), sin(inner_angle)) * piece_radius * 2.12
+			_add_disc(inner_owner, inner_pos)
+		for i in range(12):
+			var outer_angle := TAU * (float(i) + 0.5) / 12.0
+			var outer_owner := WHITE if i % 2 == 0 else BLACK
+			var outer_pos := center + Vector2(cos(outer_angle), sin(outer_angle)) * piece_radius * 4.28
+			_add_disc(outer_owner, outer_pos)
 		pieces.append({
-			"owner": owner,
-			"position": pos,
+			"owner": QUEEN,
+			"position": center,
 			"velocity": Vector2.ZERO,
-			"radius": piece_radius,
-			"kind": "disc"
+			"radius": piece_radius * 1.04,
+			"kind": "queen"
 		})
-	pieces.append({
-		"owner": QUEEN,
-		"position": center,
-		"velocity": Vector2.ZERO,
-		"radius": piece_radius * 1.04,
-		"kind": "queen"
-	})
+	else:
+		# Disc Pool: twelve discs, six per side, and no queen.
+		for i in range(6):
+			var angle_a := TAU * float(i) / 6.0
+			var angle_b := angle_a + PI / 6.0
+			_add_disc(WHITE, center + Vector2(cos(angle_a), sin(angle_a)) * piece_radius * 2.2)
+			_add_disc(BLACK, center + Vector2(cos(angle_b), sin(angle_b)) * piece_radius * 4.4)
 	striker = {
 		"position": striker_spawn,
 		"velocity": Vector2.ZERO,
 		"radius": striker_radius,
 		"kind": "striker"
 	}
-	status_text = "Your turn. Pull the striker backwards to aim."
+	striker["position"] = _turn_spawn(WHITE)
+	status_text = "Your turn. Place the striker, pull back and release."
 	queue_redraw()
+
+func _add_disc(owner: int, position: Vector2) -> void:
+	pieces.append({
+		"owner": owner,
+		"position": position,
+		"velocity": Vector2.ZERO,
+		"radius": piece_radius,
+		"kind": "disc"
+	})
+
+func _load_profile() -> void:
+	if not FileAccess.file_exists("user://player_profile.json"):
+		return
+	var file := FileAccess.open("user://player_profile.json", FileAccess.READ)
+	if file == null:
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	if not parsed is Dictionary:
+		return
+	board_index = clampi(int(parsed.get("board_index", 0)), 0, 49)
+	matches_played = maxi(0, int(parsed.get("matches_played", 0)))
+	matches_won = maxi(0, int(parsed.get("matches_won", 0)))
+	practice_xp = maxi(0, int(parsed.get("practice_xp", 0)))
+	match_mode = clampi(int(parsed.get("match_mode", MODE_CLASSIC)), MODE_CLASSIC, MODE_DISC_POOL)
+	local_two_player = bool(parsed.get("local_two_player", false))
+
+func _save_profile() -> void:
+	var profile := {
+		"board_index": board_index,
+		"matches_played": matches_played,
+		"matches_won": matches_won,
+		"practice_xp": practice_xp,
+		"match_mode": match_mode,
+		"local_two_player": local_two_player
+	}
+	var file := FileAccess.open("user://player_profile.json", FileAccess.WRITE)
+	if file != null:
+		file.store_string(JSON.stringify(profile))
+
+func _record_match_result(winner: int) -> void:
+	matches_played += 1
+	if winner == WHITE:
+		matches_won += 1
+	practice_xp += 20 + scores[WHITE] * 2
+	_save_profile()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
@@ -131,10 +195,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		queue_redraw()
 
 func _handle_press(point: Vector2) -> void:
+	if game_mode_button_rect.has_point(point):
+		match_mode = MODE_DISC_POOL if match_mode == MODE_CLASSIC else MODE_CLASSIC
+		reset_match()
+		status_text = "Disc Pool selected." if match_mode == MODE_DISC_POOL else "Classic Carrom selected."
+		_save_profile()
+		queue_redraw()
+		return
 	if mode_button_rect.has_point(point):
 		local_two_player = not local_two_player
 		bot_delay = -1.0
-		status_text = "Local two-player mode selected." if local_two_player else "Play against the offline AI."
+		status_text = "Local pass-and-play selected." if local_two_player else "Offline AI opponent selected."
+		_save_profile()
 		queue_redraw()
 		return
 	if reset_rect.has_point(point):
@@ -143,10 +215,18 @@ func _handle_press(point: Vector2) -> void:
 	if board_button_rect.has_point(point):
 		if board_catalog.size() > 0:
 			board_index = (board_index + 1) % board_catalog.size()
+		_save_profile()
 		queue_redraw()
 		return
 	if game_over or shot_active or (not local_two_player and player_turn != WHITE):
 		return
+	var active_spawn := _turn_spawn(player_turn)
+	var baseline_y := active_spawn.y
+	if absf(point.y - baseline_y) <= striker_radius * 2.2 and point.x >= board_rect.position.x + board_size * 0.22 and point.x <= board_rect.end.x - board_size * 0.22:
+		if local_two_player or player_turn == WHITE:
+			striker["position"] = Vector2(clampf(point.x, board_rect.position.x + board_size * 0.22, board_rect.end.x - board_size * 0.22), baseline_y)
+			queue_redraw()
+			return
 	if point.distance_to(striker["position"]) <= striker_radius * 3.2:
 		aiming = true
 		aim_start = striker["position"]
@@ -174,6 +254,7 @@ func _begin_shot() -> void:
 	fouled_this_shot = false
 	own_piece_potted_this_shot = false
 	queen_potted_this_shot = false
+	potted_this_shot.clear()
 	status_text = "Shot in motion..."
 	bot_delay = -1.0
 
@@ -221,6 +302,7 @@ func _step_pieces(delta: float) -> void:
 			elif owner == player_turn:
 				own_piece_potted_this_shot = true
 				scores[player_turn] += 1
+				potted_this_shot.append({"owner": owner, "kind": "disc"})
 			continue
 
 		if pos.x < left + radius:
@@ -346,6 +428,10 @@ func _complete_turn() -> void:
 
 	if fouled_this_shot:
 		status_text = "Foul: striker pocketed. Turn passed."
+		if not potted_this_shot.is_empty():
+			scores[player_turn] = maxi(0, scores[player_turn] - 1)
+			var returned: Dictionary = potted_this_shot.pop_back()
+			_add_disc(int(returned["owner"]), board_rect.get_center() + Vector2(piece_radius * 2.4, 0.0))
 		striker["position"] = _turn_spawn(player_turn)
 		player_turn = BLACK if player_turn == WHITE else WHITE
 	elif not own_piece_potted_this_shot:
@@ -356,14 +442,17 @@ func _complete_turn() -> void:
 	striker["position"] = _turn_spawn(player_turn)
 	var white_left := _count_owner(WHITE)
 	var black_left := _count_owner(BLACK)
-	if white_left == 0 or black_left == 0:
+	var queen_left := _count_owner(QUEEN)
+	var white_won := white_left == 0 and (match_mode == MODE_DISC_POOL or queen_captured or queen_left == 0)
+	var black_won := black_left == 0 and (match_mode == MODE_DISC_POOL or queen_captured or queen_left == 0)
+	if white_won or black_won:
 		game_over = true
-		if white_left == 0 and black_left == 0:
-			status_text = "Draw. Tap New Match to play again."
-		elif white_left == 0:
-			status_text = "Black wins! Tap New Match to play again."
-		else:
-			status_text = "White wins! Tap New Match to play again."
+		var winner := WHITE if white_won else BLACK
+		status_text = "Player 1 wins!" if winner == WHITE else "Player 2 wins!"
+		if not local_two_player and winner == BLACK:
+			status_text = "AI wins!"
+		status_text += " Tap New Match to play again."
+		_record_match_result(winner)
 		queue_redraw()
 		return
 	elif player_turn == WHITE:
@@ -432,6 +521,7 @@ func _draw_hud(view: Vector2) -> void:
 	var second_label := "PLAYER 2" if local_two_player else "OPPONENT"
 	draw_string(font, Vector2(30, 230), first_label + "  %d" % scores[WHITE], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 26, Color("#F5F2E9"))
 	draw_string(font, Vector2(30, 265), second_label + "  %d" % scores[BLACK], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 20, Color("#B7C6D0"))
+	draw_string(font, Vector2(30, 305), "MATCHES  %d    WINS  %d    XP  %d" % [matches_played, matches_won, practice_xp], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 16, Color("#7FA8B9"))
 
 func _draw_board() -> void:
 	var felt := _theme_color("felt", "#197A63")
@@ -501,6 +591,10 @@ func _draw_aim_guide() -> void:
 		draw_circle(dot, 3.2, Color("#FFF0BD"))
 
 func _draw_controls(view: Vector2) -> void:
+	draw_rect(game_mode_button_rect, Color("#6A3E64"), true)
+	draw_rect(game_mode_button_rect, Color("#DAB6D4"), false, 2.0)
+	var game_mode_label := "GAME  •  DISC POOL" if match_mode == MODE_DISC_POOL else "GAME  •  CLASSIC CARROM"
+	draw_string(ThemeDB.fallback_font, Vector2(game_mode_button_rect.position.x, game_mode_button_rect.position.y + 38.0), game_mode_label, HORIZONTAL_ALIGNMENT_CENTER, game_mode_button_rect.size.x, 17, Color("#F7E8F1"))
 	draw_rect(mode_button_rect, Color("#2C5360"), true)
 	draw_rect(mode_button_rect, Color("#A8D1D7"), false, 2.0)
 	var mode_label := "MODE  •  LOCAL 2 PLAYERS" if local_two_player else "MODE  •  VS OFFLINE AI"
@@ -514,7 +608,8 @@ func _draw_controls(view: Vector2) -> void:
 	draw_rect(reset_rect, Color("#C18A3D"), true)
 	draw_rect(reset_rect, Color("#F3D89A"), false, 2.0)
 	draw_string(ThemeDB.fallback_font, Vector2(reset_rect.position.x, reset_rect.position.y + 41.0), "NEW MATCH", HORIZONTAL_ALIGNMENT_CENTER, reset_rect.size.x, 21, Color("#101C26"))
-	draw_string(ThemeDB.fallback_font, Vector2(20, 320.0), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 16, Color("#DCE7E8"))
+	draw_string(ThemeDB.fallback_font, Vector2(20, 350.0), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 16, Color("#DCE7E8"))
+	draw_string(ThemeDB.fallback_font, Vector2(20, 385.0), "PLACE STRIKER ALONG YOUR BASELINE  •  DRAG BACK TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 14, Color("#8CAEBB"))
 
 func _theme_color(key: String, fallback: String) -> Color:
 	if board_catalog.is_empty():
