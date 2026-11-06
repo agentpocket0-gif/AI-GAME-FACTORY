@@ -13,7 +13,10 @@ const STOP_SPEED := 7.0
 var pieces: Array[Dictionary] = []
 var striker: Dictionary = {}
 var board_catalog: Array = []
+var striker_catalog: Array = []
 var board_index := 0
+var selected_striker_index := 0
+var turn_time_remaining := 20.0
 var local_two_player := false
 var match_mode := MODE_CLASSIC
 var matches_played := 0
@@ -44,9 +47,11 @@ var reset_rect := Rect2()
 var board_button_rect := Rect2()
 var mode_button_rect := Rect2()
 var game_mode_button_rect := Rect2()
+var striker_button_rect := Rect2()
 
 func _ready() -> void:
 	_load_board_catalog()
+	_load_striker_catalog()
 	_load_profile()
 	_refresh_geometry()
 	get_viewport().size_changed.connect(_on_viewport_resized)
@@ -74,10 +79,44 @@ func _refresh_geometry() -> void:
 	piece_radius = board_size * 0.018
 	striker_radius = board_size * 0.028
 	striker_spawn = Vector2(board_rect.get_center().x, board_rect.position.y + board_size * 0.81)
-	reset_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 125.0), Vector2(250.0, 64.0))
-	board_button_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 205.0), Vector2(250.0, 60.0))
-	mode_button_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 285.0), Vector2(250.0, 60.0))
-	game_mode_button_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 365.0), Vector2(250.0, 60.0))
+	reset_rect = Rect2(Vector2(view.x * 0.5 - 125.0, view.y - 100.0), Vector2(250.0, 58.0))
+	board_button_rect = Rect2(Vector2(view.x * 0.25 - 112.0, view.y - 180.0), Vector2(224.0, 56.0))
+	striker_button_rect = Rect2(Vector2(view.x * 0.75 - 112.0, view.y - 180.0), Vector2(224.0, 56.0))
+	mode_button_rect = Rect2(Vector2(view.x * 0.25 - 112.0, view.y - 260.0), Vector2(224.0, 56.0))
+	game_mode_button_rect = Rect2(Vector2(view.x * 0.75 - 112.0, view.y - 260.0), Vector2(224.0, 56.0))
+
+func _load_striker_catalog() -> void:
+	var file := FileAccess.open("res://data/striker_catalog.json", FileAccess.READ)
+	if file == null:
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	if parsed is Array:
+		striker_catalog = parsed
+
+func _selected_striker() -> Dictionary:
+	if striker_catalog.is_empty():
+		return {"name": "Classic", "force": 1.0, "aim": 1.0, "time": 20, "base": "#AAB6C4", "highlight": "#FFFFFF"}
+	return striker_catalog[clampi(selected_striker_index, 0, striker_catalog.size() - 1)]
+
+func _striker_is_unlocked(index: int) -> bool:
+	if index < 0 or index >= striker_catalog.size():
+		return false
+	return practice_xp >= int(striker_catalog[index].get("unlock_xp", 0))
+
+func _cycle_striker() -> void:
+	if striker_catalog.is_empty():
+		return
+	for offset in range(1, striker_catalog.size() + 1):
+		var next_index := (selected_striker_index + offset) % striker_catalog.size()
+		if _striker_is_unlocked(next_index):
+			selected_striker_index = next_index
+			break
+	_save_profile()
+	status_text = "Striker: " + String(_selected_striker().get("name", "Classic"))
+	queue_redraw()
+
+func _turn_time_limit() -> float:
+	return float(_selected_striker().get("time", 20))
 
 func reset_match() -> void:
 	pieces.clear()
@@ -127,6 +166,7 @@ func reset_match() -> void:
 		"kind": "striker"
 	}
 	striker["position"] = _turn_spawn(WHITE)
+	turn_time_remaining = _turn_time_limit()
 	status_text = "Your turn. Place the striker, pull back and release."
 	queue_redraw()
 
@@ -152,6 +192,7 @@ func _load_profile() -> void:
 	matches_played = maxi(0, int(parsed.get("matches_played", 0)))
 	matches_won = maxi(0, int(parsed.get("matches_won", 0)))
 	practice_xp = maxi(0, int(parsed.get("practice_xp", 0)))
+	selected_striker_index = clampi(int(parsed.get("selected_striker_index", 0)), 0, maxi(0, striker_catalog.size() - 1))
 	match_mode = clampi(int(parsed.get("match_mode", MODE_CLASSIC)), MODE_CLASSIC, MODE_DISC_POOL)
 	local_two_player = bool(parsed.get("local_two_player", false))
 
@@ -161,6 +202,7 @@ func _save_profile() -> void:
 		"matches_played": matches_played,
 		"matches_won": matches_won,
 		"practice_xp": practice_xp,
+		"selected_striker_index": selected_striker_index,
 		"match_mode": match_mode,
 		"local_two_player": local_two_player
 	}
@@ -201,6 +243,9 @@ func _handle_press(point: Vector2) -> void:
 		status_text = "Disc Pool selected." if match_mode == MODE_DISC_POOL else "Classic Carrom selected."
 		_save_profile()
 		queue_redraw()
+		return
+	if striker_button_rect.has_point(point):
+		_cycle_striker()
 		return
 	if mode_button_rect.has_point(point):
 		local_two_player = not local_two_player
@@ -243,7 +288,8 @@ func _handle_release(point: Vector2) -> void:
 		status_text = "Pull farther back to take a shot."
 		queue_redraw()
 		return
-	var power := clampf(pull.length() * 5.4, 240.0, 1120.0)
+	var force_multiplier := float(_selected_striker().get("force", 1.0))
+	var power := clampf(pull.length() * 5.4 * force_multiplier, 240.0, 1120.0 * force_multiplier)
 	striker["velocity"] = pull.normalized() * power
 	_begin_shot()
 	queue_redraw()
@@ -260,7 +306,17 @@ func _begin_shot() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not shot_active:
-		if player_turn == BLACK and not game_over and not local_two_player:
+		if not game_over and not (player_turn == BLACK and not local_two_player):
+			turn_time_remaining -= delta
+			if turn_time_remaining <= 0.0:
+				player_turn = BLACK if player_turn == WHITE else WHITE
+				striker["position"] = _turn_spawn(player_turn)
+				turn_time_remaining = _turn_time_limit()
+				status_text = "Time expired. Turn passed."
+				if player_turn == BLACK and not local_two_player:
+					bot_delay = 0.85
+				queue_redraw()
+		elif player_turn == BLACK and not game_over and not local_two_player:
 			if bot_delay < 0.0:
 				bot_delay = 0.85
 			else:
@@ -389,7 +445,8 @@ func _resolve_pair(a: Dictionary, b: Dictionary) -> void:
 	var vb: Vector2 = b["velocity"]
 	var closing_speed := (va - vb).dot(normal)
 	if closing_speed > 0.0:
-		var impulse := normal * closing_speed * RESTITUTION
+		var impulse_magnitude := (1.0 + RESTITUTION) * closing_speed * 0.5
+		var impulse := normal * impulse_magnitude
 		va -= impulse
 		vb += impulse
 	a["position"] = pa
@@ -460,6 +517,7 @@ func _complete_turn() -> void:
 	else:
 		status_text += " Player 2 turn." if local_two_player else " Opponent turn."
 
+	turn_time_remaining = _turn_time_limit()
 	if player_turn == BLACK and not game_over and not local_two_player:
 		bot_delay = 0.85
 	queue_redraw()
@@ -522,6 +580,10 @@ func _draw_hud(view: Vector2) -> void:
 	draw_string(font, Vector2(30, 230), first_label + "  %d" % scores[WHITE], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 26, Color("#F5F2E9"))
 	draw_string(font, Vector2(30, 265), second_label + "  %d" % scores[BLACK], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 20, Color("#B7C6D0"))
 	draw_string(font, Vector2(30, 305), "MATCHES  %d    WINS  %d    XP  %d" % [matches_played, matches_won, practice_xp], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 16, Color("#7FA8B9"))
+	var timer_label := "TIME  %.0f" % maxf(0.0, turn_time_remaining)
+	var striker_data := _selected_striker()
+	draw_string(font, Vector2(30, 337), "%s  F%.2f  A%.2f  T%.0f" % [String(striker_data.get("name", "Classic")), float(striker_data.get("force", 1.0)), float(striker_data.get("aim", 1.0)), float(striker_data.get("time", 20))], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0, 15, Color("#D4B9A0"))
+	draw_string(font, Vector2(view.x - 140.0, 190), timer_label, HORIZONTAL_ALIGNMENT_RIGHT, 110.0, 18, Color("#F1C978"))
 
 func _draw_board() -> void:
 	var felt := _theme_color("felt", "#197A63")
@@ -573,9 +635,12 @@ func _draw_token(pos: Vector2, radius: float, base: Color, shine: Color) -> void
 func _draw_striker() -> void:
 	var pos: Vector2 = striker["position"]
 	draw_circle(pos + Vector2(2.0, 5.0), striker_radius * 1.12, Color(0, 0, 0, 0.5))
-	draw_circle(pos, striker_radius * 1.12, Color("#E5B85D"))
+	var striker_data := _selected_striker()
+	var base_color := Color.from_string(String(striker_data.get("base", "#AAB6C4")), Color("#AAB6C4"))
+	var highlight_color := Color.from_string(String(striker_data.get("highlight", "#FFFFFF")), Color.WHITE)
+	draw_circle(pos, striker_radius * 1.12, highlight_color)
 	draw_circle(pos, striker_radius * 0.91, Color("#263A4A"))
-	draw_circle(pos, striker_radius * 0.63, Color("#E7E9E7"))
+	draw_circle(pos, striker_radius * 0.63, base_color)
 	draw_circle(pos - Vector2(striker_radius * 0.19, striker_radius * 0.22), striker_radius * 0.18, Color(1.0, 1.0, 1.0, 0.75))
 
 func _draw_aim_guide() -> void:
@@ -584,7 +649,8 @@ func _draw_aim_guide() -> void:
 		return
 	var direction := pull.normalized()
 	var start: Vector2 = striker["position"]
-	var end := start + direction * minf(board_size * 0.34, pull.length() * 2.2)
+	var aim_multiplier := float(_selected_striker().get("aim", 1.0))
+	var end := start + direction * minf(board_size * 0.34 * aim_multiplier, pull.length() * 2.2 * aim_multiplier)
 	draw_line(start, end, Color("#FFF0BD"), 3.0, true)
 	for i in range(1, 8):
 		var dot := start + direction * (end - start).length() * float(i) / 8.0
@@ -593,23 +659,31 @@ func _draw_aim_guide() -> void:
 func _draw_controls(view: Vector2) -> void:
 	draw_rect(game_mode_button_rect, Color("#6A3E64"), true)
 	draw_rect(game_mode_button_rect, Color("#DAB6D4"), false, 2.0)
-	var game_mode_label := "GAME  •  DISC POOL" if match_mode == MODE_DISC_POOL else "GAME  •  CLASSIC CARROM"
-	draw_string(ThemeDB.fallback_font, Vector2(game_mode_button_rect.position.x, game_mode_button_rect.position.y + 38.0), game_mode_label, HORIZONTAL_ALIGNMENT_CENTER, game_mode_button_rect.size.x, 17, Color("#F7E8F1"))
+	var game_mode_label := "DISC POOL" if match_mode == MODE_DISC_POOL else "CLASSIC CARROM"
+	draw_string(ThemeDB.fallback_font, Vector2(game_mode_button_rect.position.x, game_mode_button_rect.position.y + 36.0), game_mode_label, HORIZONTAL_ALIGNMENT_CENTER, game_mode_button_rect.size.x, 16, Color("#F7E8F1"))
+
 	draw_rect(mode_button_rect, Color("#2C5360"), true)
 	draw_rect(mode_button_rect, Color("#A8D1D7"), false, 2.0)
-	var mode_label := "MODE  •  LOCAL 2 PLAYERS" if local_two_player else "MODE  •  VS OFFLINE AI"
-	draw_string(ThemeDB.fallback_font, Vector2(mode_button_rect.position.x, mode_button_rect.position.y + 38.0), mode_label, HORIZONTAL_ALIGNMENT_CENTER, mode_button_rect.size.x, 17, Color("#F4E8CD"))
+	var mode_label := "LOCAL 2 PLAYERS" if local_two_player else "VS OFFLINE AI"
+	draw_string(ThemeDB.fallback_font, Vector2(mode_button_rect.position.x, mode_button_rect.position.y + 36.0), mode_label, HORIZONTAL_ALIGNMENT_CENTER, mode_button_rect.size.x, 16, Color("#F4E8CD"))
+
 	draw_rect(board_button_rect, Color("#24485A"), true)
 	draw_rect(board_button_rect, Color("#8FB9C7"), false, 2.0)
 	var board_name := "CLASSIC BOARD"
 	if board_catalog.size() > 0:
 		board_name = String(board_catalog[board_index].get("name", board_name)).to_upper()
-	draw_string(ThemeDB.fallback_font, Vector2(board_button_rect.position.x, board_button_rect.position.y + 38.0), "BOARD  •  " + board_name, HORIZONTAL_ALIGNMENT_CENTER, board_button_rect.size.x, 17, Color("#F4E8CD"))
+	draw_string(ThemeDB.fallback_font, Vector2(board_button_rect.position.x, board_button_rect.position.y + 35.0), "BOARD " + board_name, HORIZONTAL_ALIGNMENT_CENTER, board_button_rect.size.x, 14, Color("#F4E8CD"))
+
+	draw_rect(striker_button_rect, Color("#6A4A30"), true)
+	draw_rect(striker_button_rect, Color("#E7C18B"), false, 2.0)
+	var striker_name := String(_selected_striker().get("name", "Classic")).to_upper()
+	draw_string(ThemeDB.fallback_font, Vector2(striker_button_rect.position.x, striker_button_rect.position.y + 35.0), "STRIKER " + striker_name, HORIZONTAL_ALIGNMENT_CENTER, striker_button_rect.size.x, 14, Color("#FFF0D8"))
+
 	draw_rect(reset_rect, Color("#C18A3D"), true)
 	draw_rect(reset_rect, Color("#F3D89A"), false, 2.0)
-	draw_string(ThemeDB.fallback_font, Vector2(reset_rect.position.x, reset_rect.position.y + 41.0), "NEW MATCH", HORIZONTAL_ALIGNMENT_CENTER, reset_rect.size.x, 21, Color("#101C26"))
-	draw_string(ThemeDB.fallback_font, Vector2(20, 350.0), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 16, Color("#DCE7E8"))
-	draw_string(ThemeDB.fallback_font, Vector2(20, 385.0), "PLACE STRIKER ALONG YOUR BASELINE  •  DRAG BACK TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 14, Color("#8CAEBB"))
+	draw_string(ThemeDB.fallback_font, Vector2(reset_rect.position.x, reset_rect.position.y + 38.0), "NEW MATCH", HORIZONTAL_ALIGNMENT_CENTER, reset_rect.size.x, 19, Color("#101C26"))
+	draw_string(ThemeDB.fallback_font, Vector2(20, 375.0), status_text, HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 15, Color("#DCE7E8"))
+	draw_string(ThemeDB.fallback_font, Vector2(20, 403.0), "MOVE STRIKER ON BASELINE  •  DRAG BACK TO SHOOT", HORIZONTAL_ALIGNMENT_CENTER, view.x - 40.0, 13, Color("#8CAEBB"))
 
 func _theme_color(key: String, fallback: String) -> Color:
 	if board_catalog.is_empty():
