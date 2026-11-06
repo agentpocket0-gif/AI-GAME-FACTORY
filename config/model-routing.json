@@ -1,0 +1,47 @@
+{
+  "policy_version": 1,
+  "reasoning": "high",
+  "providers": {
+    "nvidia": {
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "secret": "NVIDIA_API_KEY",
+      "application_rpm_cap": 30,
+      "max_parallel_requests": 1,
+      "models": {
+        "coding_fast": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "coding_deep": "nvidia/nemotron-3-ultra-550b-a55b"
+      },
+      "reasoning_parameters": {
+        "enable_thinking": true,
+        "lightning_reasoning_budget": 16384
+      }
+    },
+    "google": {
+      "base_url": "https://generativelanguage.googleapis.com/v1beta",
+      "secrets": [
+        "GEMINI_API_KEY_1",
+        "GEMINI_API_KEY_2"
+      ],
+      "shared_project_rpm_cap": 10,
+      "shared_project_rpd_cap": 500,
+      "max_parallel_requests": 1,
+      "video_review_model_primary": "gemini-3.5-flash-lite",
+      "video_review_model_fallback": "gemini-3.1-flash-lite",
+      "general_reasoning_models": [
+        "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it"
+      ],
+      "reasoning_level": "high",
+      "key_failover_policy": "Use the second key only for authentication/configuration recovery; never switch keys to bypass 429 or quota errors. Gemini limits are project scoped."
+    }
+  },
+  "routing": {
+    "code_generation": "nvidia.coding_deep",
+    "routine_code_changes": "nvidia.coding_fast",
+    "bug_repair": "nvidia.coding_fast",
+    "architecture_review": "nvidia.coding_deep",
+    "video_review": "google.video_review_model_primary",
+    "video_review_fallback": "google.video_review_model_fallback",
+    "text_reasoning_fallback": "google.general_reasoning_models"
+  }
+}
