@@ -78,6 +78,29 @@ func _run() -> void:
 	if not _check(game.get("pieces").size() == 19, "Classic must restore eighteen discs and queen"):
 		return
 
+	# Precision Challenge is a solo mode with twelve gold targets and no opponent.
+	game.call("_handle_press", game_mode_rect.get_center())
+	if not _check(game.get("match_mode") == 2, "Game mode button must select Precision Challenge"):
+		return
+	if not _check(game.get("pieces").size() == 12 and int(game.call("_count_owner", 0)) == 12 and int(game.call("_count_owner", 1)) == 0, "Precision Challenge must create twelve solo targets"):
+		return
+	game.set("turn_time_remaining", 0.01)
+	game.call("_physics_process", 0.02)
+	if not _check(game.get("player_turn") == 0 and float(game.get("turn_time_remaining")) > 0.0, "Challenge clock must reset without starting an AI turn"):
+		return
+	var no_targets_left: Array[Dictionary] = []
+	game.set("pieces", no_targets_left)
+	game.set("shot_active", true)
+	game.set("own_piece_potted_this_shot", true)
+	game.set("fouled_this_shot", false)
+	game.set("queen_potted_this_shot", false)
+	game.call("_complete_turn")
+	if not _check(game.get("game_over") == true and String(game.get("status_text")).contains("cleared"), "Clearing all targets must complete the challenge"):
+		return
+	game.call("_handle_press", game_mode_rect.get_center())
+	if not _check(game.get("match_mode") == 0 and game.get("pieces").size() == 19, "Mode cycle must return from challenge to Classic Carrom"):
+		return
+
 	var player_mode_rect: Rect2 = game.get("mode_button_rect")
 	game.call("_handle_press", player_mode_rect.get_center())
 	if not _check(game.get("local_two_player") == true, "Player mode button must enable local two-player"):
@@ -299,5 +322,5 @@ func _run() -> void:
 	if not _check(FileAccess.file_exists("user://player_profile.json"), "Profile must be saved locally"):
 		return
 
-	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI aim, foul penalties, queen cover rules and local save, pause/resume flow, animated collision sparks and pocket rings")
+	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI aim, foul penalties, queen cover rules and local save, pause/resume flow, Precision Challenge, animated collision sparks and pocket rings")
 	quit(0)
