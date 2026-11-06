@@ -79,23 +79,29 @@ def reserve_request(
     rpm_cap: int,
     model_daily_cap: int | None = None,
     group_daily_cap: int,
+    preferred_pool_id: str | None = None,
 ) -> tuple[str, str]:
     """Reserve one request in a project pool and return (pool_id, API key).
 
-    Pool choice is round-robin and independent of model. A provider 429 must
-    stop the current run; this function is only for routing future requests
-    among projects with locally available quota.
+    Pool choice is round-robin and independent of model unless a same-project
+    fallback explicitly supplies preferred_pool_id. A provider 429 must stop
+    the current run; this function does not rotate keys after a quota error.
     """
     pools = available_pools()
     now = datetime.now(timezone.utc)
+    if preferred_pool_id is not None:
+        pools = [pool for pool in pools if pool[0] == preferred_pool_id]
+        if not pools:
+            raise RuntimeError("The selected Gemini project pool is not configured in this runtime.")
 
     with _locked_state() as state:
         rows = _prune(list(state.get("requests", [])), now)
-        start = int(state.get("next_pool", 0)) % len(pools)
+        all_pools = available_pools()
+        start = int(state.get("next_pool", 0)) % len(all_pools)
 
         for offset in range(len(pools)):
-            index = (start + offset) % len(pools)
-            pool_id, api_key = pools[index]
+            pool_id, api_key = pools[offset]
+            index = next(i for i, item in enumerate(all_pools) if item[0] == pool_id)
             pool_rows = [r for r in rows if r.get("pool") == pool_id and r.get("group") == group]
             last_minute = []
             for row in pool_rows:
@@ -121,7 +127,7 @@ def reserve_request(
                 "model": model,
             })
             state["requests"] = rows
-            state["next_pool"] = (index + 1) % len(pools)
+            state["next_pool"] = (index + 1) % len(all_pools)
             return pool_id, api_key
 
         raise RuntimeError(
