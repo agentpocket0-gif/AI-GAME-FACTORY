@@ -23,6 +23,7 @@ var matches_played := 0
 var matches_won := 0
 var practice_xp := 0
 var potted_this_shot: Array[Dictionary] = []
+var visual_effects: Array[Dictionary] = []
 var board_rect := Rect2()
 var board_size := 640.0
 var pocket_radius := 40.0
@@ -56,6 +57,67 @@ func _ready() -> void:
 	_refresh_geometry()
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	reset_match()
+
+func _process(delta: float) -> void:
+	if visual_effects.is_empty():
+		return
+	for i in range(visual_effects.size() - 1, -1, -1):
+		var effect: Dictionary = visual_effects[i]
+		effect["age"] = float(effect.get("age", 0.0)) + delta
+		if String(effect.get("kind", "")) == "spark":
+			var position: Vector2 = effect["position"]
+			var velocity: Vector2 = effect["velocity"]
+			position += velocity * delta
+			velocity *= exp(-5.5 * delta)
+			effect["position"] = position
+			effect["velocity"] = velocity
+		if float(effect["age"]) >= float(effect["duration"]):
+			visual_effects.remove_at(i)
+		else:
+			visual_effects[i] = effect
+	queue_redraw()
+
+func _spawn_pocket_effect(position: Vector2, tint: Color) -> void:
+	visual_effects.append({
+		"kind": "ring",
+		"position": position,
+		"age": 0.0,
+		"duration": 0.42,
+		"color": tint
+	})
+
+func _spawn_impact_effect(position: Vector2, strength: float) -> void:
+	var safe_strength := clampf(strength, 0.2, 1.35)
+	for i in range(6):
+		var angle := randf_range(0.0, TAU)
+		var speed := randf_range(65.0, 155.0) * safe_strength
+		visual_effects.append({
+			"kind": "spark",
+			"position": position,
+			"velocity": Vector2(cos(angle), sin(angle)) * speed,
+			"age": 0.0,
+			"duration": randf_range(0.20, 0.34),
+			"radius": randf_range(1.6, 3.2) * safe_strength,
+			"color": Color("#F5D08A")
+		})
+
+func _draw_visual_effects() -> void:
+	for effect in visual_effects:
+		var age := float(effect.get("age", 0.0))
+		var duration := maxf(0.001, float(effect.get("duration", 0.3)))
+		var progress := clampf(age / duration, 0.0, 1.0)
+		var fade := 1.0 - progress
+		var position: Vector2 = effect["position"]
+		var tint: Color = effect["color"]
+		tint.a = fade
+		if String(effect.get("kind", "")) == "ring":
+			var ring_radius := pocket_radius * (0.58 + progress * 1.25)
+			draw_arc(position, ring_radius, 0.0, TAU, 36, tint, maxf(1.5, piece_radius * 0.11), true)
+		else:
+			var velocity: Vector2 = effect["velocity"]
+			var tail := position - velocity.normalized() * minf(13.0, velocity.length() * 0.035)
+			draw_line(tail, position, tint, maxf(1.0, float(effect.get("radius", 2.0)) * fade), true)
+			draw_circle(position, maxf(0.5, float(effect.get("radius", 2.0)) * fade), tint)
 
 func _on_viewport_resized() -> void:
 	_refresh_geometry()
@@ -132,6 +194,7 @@ func _turn_time_limit() -> float:
 
 func reset_match() -> void:
 	pieces.clear()
+	visual_effects.clear()
 	potted_this_shot.clear()
 	scores = [0, 0]
 	player_turn = WHITE
@@ -365,6 +428,8 @@ func _step_pieces(delta: float) -> void:
 
 		if _is_in_pocket(pos):
 			var owner: int = piece["owner"]
+			var pocket_tint := Color("#E84D54") if owner == QUEEN else (Color("#F5E9CB") if owner == WHITE else Color("#8195A5"))
+			_spawn_pocket_effect(pos, pocket_tint)
 			if owner == QUEEN:
 				queen_potted_this_shot = true
 			else:
@@ -400,6 +465,7 @@ func _step_pieces(delta: float) -> void:
 	if striker_vel.length() < STOP_SPEED:
 		striker_vel = Vector2.ZERO
 	if _is_in_pocket(striker_pos):
+		_spawn_pocket_effect(striker_pos, Color("#F1C978"))
 		fouled_this_shot = true
 		striker_pos = striker_spawn
 		striker_vel = Vector2.ZERO
@@ -460,6 +526,8 @@ func _resolve_pair(a: Dictionary, b: Dictionary) -> void:
 	var vb: Vector2 = b["velocity"]
 	var closing_speed := (va - vb).dot(normal)
 	if closing_speed > 0.0:
+		if closing_speed > 150.0:
+			_spawn_impact_effect((pa + pb) * 0.5, closing_speed / 900.0)
 		var impulse_magnitude := (1.0 + RESTITUTION) * closing_speed * 0.5
 		var impulse := normal * impulse_magnitude
 		va -= impulse
@@ -631,6 +699,7 @@ func _draw() -> void:
 	_draw_hud(view)
 	_draw_board()
 	_draw_pieces()
+	_draw_visual_effects()
 	_draw_controls(view)
 	if aiming:
 		_draw_aim_guide()
