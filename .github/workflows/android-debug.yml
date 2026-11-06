@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           mkdir -p build
           "$GODOT_BIN" --headless --path game --editor --quit
-          "$GODOT_BIN" --headless --path game --export-debug "Android" build/BoardMastersArena-debug.apk
+          "$GODOT_BIN" --headless --path game --export-debug "Android" ../build/BoardMastersArena-debug.apk
           test -s build/BoardMastersArena-debug.apk
 
       - name: Upload debug APK
