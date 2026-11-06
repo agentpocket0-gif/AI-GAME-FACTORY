@@ -48,10 +48,10 @@ jobs:
           python3 -m py_compile tools/ai_repair.py
 
       - name: Import and parse project
-        run: "$GODOT_BIN" --headless --path game --editor --quit
+        run: $GODOT_BIN --headless --path game --editor --quit
 
       - name: Run scene smoke test
-        run: "$GODOT_BIN" --headless --path game --script res://tests/smoke_test.gd
+        run: $GODOT_BIN --headless --path game --script res://tests/smoke_test.gd
 
       - name: Upload Godot logs
         if: always()
