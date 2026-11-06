@@ -280,6 +280,30 @@ func _run() -> void:
 	if not _check(int(cover_scores[0]) == 4, "A covered queen must award exactly three bonus points"):
 		return
 
+	# AI difficulty selector must cycle and persist across local profile saves.
+	game.call("reset_match")
+	game.set("ai_difficulty", 1)
+	var pause_menu_rect: Rect2 = game.get("reset_rect")
+	game.call("_handle_press", pause_menu_rect.get_center())
+	var difficulty_rect: Rect2 = game.get("difficulty_button_rect")
+	game.call("_handle_press", difficulty_rect.get_center())
+	if not _check(game.get("ai_difficulty") == 2 and String(game.call("_ai_difficulty_name")) == "Hard", "AI difficulty selector must cycle from Normal to Hard"):
+		return
+	game.call("_handle_press", difficulty_rect.get_center())
+	if not _check(game.get("ai_difficulty") == 0, "AI difficulty selector must wrap from Hard to Easy"):
+		return
+	game.call("_handle_press", difficulty_rect.get_center())
+	if not _check(game.get("ai_difficulty") == 1, "AI difficulty selector must return to Normal"):
+		return
+	var profile_file := FileAccess.open("user://player_profile.json", FileAccess.READ)
+	if not _check(profile_file != null, "Difficulty selection must keep a readable local profile"):
+		return
+	var saved_profile = JSON.parse_string(profile_file.get_as_text())
+	profile_file.close()
+	if not _check(int(saved_profile.get("ai_difficulty", -1)) == 1, "AI difficulty must be stored in the player profile"):
+		return
+	game.call("_handle_press", pause_menu_rect.get_center())
+
 	# Pause menu must freeze gameplay, resume safely and allow a deliberate new match.
 	game.call("reset_match")
 	var menu_button: Rect2 = game.get("reset_rect")
@@ -320,5 +344,5 @@ func _run() -> void:
 	if not _check(FileAccess.file_exists("user://player_profile.json"), "Profile must be saved locally"):
 		return
 
-	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI aim, foul penalties, queen cover rules and local save, pause/resume flow, Precision Challenge, animated collision sparks and pocket rings")
+	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI aim, foul penalties, queen cover rules and local save, pause/resume flow, AI difficulty levels, Precision Challenge, animated collision sparks and pocket rings")
 	quit(0)
