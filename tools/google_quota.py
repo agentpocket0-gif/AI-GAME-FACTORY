@@ -83,33 +83,35 @@ def reserve_request(
 ) -> tuple[str, str]:
     """Reserve one request in a project pool and return (pool_id, API key).
 
-    Pool choice is round-robin and independent of model unless a same-project
-    fallback explicitly supplies preferred_pool_id. A provider 429 must stop
-    the current run; this function does not rotate keys after a quota error.
+    New tasks are round-robin across configured projects. A same-project
+    fallback may supply preferred_pool_id. A provider 429 must stop the
+    current run; this function never retries another key after a quota error.
     """
     all_pools = available_pools()
     now = datetime.now(timezone.utc)
-    if preferred_pool_id is not None:
-        preferred_index = next(
-            (i for i, item in enumerate(all_pools) if item[0] == preferred_pool_id),
-            None,
-        )
-        if preferred_index is None:
-            raise RuntimeError("The selected Gemini project pool is not configured in this runtime.")
-        candidate_indices = [preferred_index]
-    else:
-        with _locked_state() as state:
-            start_index = int(state.get("next_pool", 0)) % len(all_pools)
-        candidate_indices = [
-            (start_index + offset) % len(all_pools)
-            for offset in range(len(all_pools))
-        ]
 
     with _locked_state() as state:
         rows = _prune(list(state.get("requests", [])), now)
+        if preferred_pool_id is not None:
+            candidate_indices = [
+                i for i, item in enumerate(all_pools)
+                if item[0] == preferred_pool_id
+            ]
+            if not candidate_indices:
+                raise RuntimeError("The selected Gemini project pool is not configured in this runtime.")
+        else:
+            start_index = int(state.get("next_pool", 0)) % len(all_pools)
+            candidate_indices = [
+                (start_index + offset) % len(all_pools)
+                for offset in range(len(all_pools))
+            ]
+
         for index in candidate_indices:
             pool_id, api_key = all_pools[index]
-            pool_rows = [r for r in rows if r.get("pool") == pool_id and r.get("group") == group]
+            pool_rows = [
+                row for row in rows
+                if row.get("pool") == pool_id and row.get("group") == group
+            ]
             last_minute = []
             for row in pool_rows:
                 try:
@@ -119,7 +121,7 @@ def reserve_request(
                 except (KeyError, ValueError, TypeError):
                     continue
 
-            model_rows = [r for r in pool_rows if r.get("model") == model]
+            model_rows = [row for row in pool_rows if row.get("model") == model]
             if len(last_minute) >= rpm_cap:
                 continue
             if model_daily_cap is not None and len(model_rows) >= model_daily_cap:
