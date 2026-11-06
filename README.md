@@ -7,7 +7,7 @@ This public repository contains an original Godot 4.7.2 carrom-style game, evide
 Open the `game/` folder in Godot 4.7.2 stable. Main scene: `game/scenes/main.tscn`.
 
 Current playable slice:
-- Classic Carrom (18 discs + queen) and Disc Pool (12 discs).
+- Classic Carrom (18 discs + queen), Disc Pool (12 discs) and solo Precision Challenge (12 targets).
 - Touch aiming, striker baseline placement, disc collision, friction, cushion bounce and four pockets.
 - Simplified scoring, foul return and queen-cover rules.
 - Offline AI and same-device local two-player.
