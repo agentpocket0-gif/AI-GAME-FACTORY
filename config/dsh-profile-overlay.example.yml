@@ -1,0 +1,59 @@
+# Example DSH profile overlay for $DSH_HOME/profiles/<profile>/cordis.patch.yml
+# Merge these rows into the existing profile. Do not replace the entire profile.
+
+- name: '@deepseek-ai/dsh-llm-pi-ai'
+  config:
+    providers:
+      nvidia-nim:
+        displayName: NVIDIA Nemotron NIM
+        apiKeyEnv: NVIDIA_API_KEY
+        api: openai-completions
+        baseURL: https://integrate.api.nvidia.com/v1
+        reasoning: high
+        compat:
+          supportsDeveloperRole: false
+          maxTokensField: max_tokens
+        models:
+          - id: nvidia/nemotron-3-ultra-550b-a55b
+            name: Nemotron 3 Ultra 550B
+            contextWindow: 1000000
+            maxTokens: 16384
+            reasoningEfforts:
+              off:
+              high: high
+            compat:
+              thinkingFormat: chat-template
+              supportsDeveloperRole: false
+              maxTokensField: max_tokens
+              chatTemplateKwargs:
+                enable_thinking:
+                  $var: thinking.enabled
+                  omitWhenOff: true
+                force_nonempty_content: true
+          - id: nvidia/nemotron-3.5-lightning-30b-a3b
+            name: Nemotron 3.5 Lightning 30B
+            contextWindow: 1000000
+            maxTokens: 16384
+            reasoningEfforts:
+              off:
+              high: high
+            compat:
+              thinkingFormat: chat-template
+              supportsDeveloperRole: false
+              maxTokensField: max_tokens
+              chatTemplateKwargs:
+                enable_thinking:
+                  $var: thinking.enabled
+                  omitWhenOff: true
+
+# Optional: add REA as an MCP server when DSH and the JDK/JADX prerequisites
+# are installed in the same environment as the APK being analysed.
+- id: mcp-rea
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: rea
+    transport: stdio
+    command: npx
+    args: ['-y', 'rea-agents@6.8.0', 'mcp']
+    env:
+      REA_JADX_MCP_JAR: /absolute/path/to/jadx-headless-mcp-0.7.1-all.jar
