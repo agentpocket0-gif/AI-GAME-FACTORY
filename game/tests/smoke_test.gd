@@ -259,9 +259,25 @@ func _run() -> void:
 	if not _check(int(cover_scores[0]) == 4, "A covered queen must award exactly three bonus points"):
 		return
 
+	# Pocket rings and hit sparks must be created, animated and removed safely.
+	game.call("_spawn_pocket_effect", Vector2(120.0, 120.0), Color("#F1C978"))
+	var effects_after_pocket: Array = game.get("visual_effects")
+	if not _check(effects_after_pocket.size() == 1, "Pocketing a piece must create a visual ring effect"):
+		return
+	game.call("_process", 0.12)
+	effects_after_pocket = game.get("visual_effects")
+	if not _check(float(effects_after_pocket[0]["age"]) > 0.1, "Visual effects must animate with elapsed time"):
+		return
+	game.call("_spawn_impact_effect", Vector2(140.0, 140.0), 0.8)
+	if not _check(game.get("visual_effects").size() == 7, "A strong collision must create a short spark burst"):
+		return
+	game.call("_process", 0.6)
+	if not _check(game.get("visual_effects").is_empty(), "Expired visual effects must be cleaned up"):
+		return
+
 	game.call("_save_profile")
 	if not _check(FileAccess.file_exists("user://player_profile.json"), "Profile must be saved locally"):
 		return
 
-	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI aim, foul penalties, queen cover rules and local save")
+	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI aim, foul penalties, queen cover rules and local save, animated collision sparks and pocket rings")
 	quit(0)
