@@ -1,0 +1,19 @@
+feature,area,priority,original_evidence,confidence,clone,notes
+Match 3 bubbles,core gameplay,must,Google Play says match 3 or more same-colour bubbles,high,no,Implement an original engine and tests
+Aim and shoot,core gameplay,must,Secondary gameplay captures show shooter and aiming direction,medium,no,Exact input and aim assist require hands-on confirmation
+Rescue hidden dragon,level objective,must,Google Play says remove bubbles to find hidden dragons,high,no,Create an original rescue character and objective
+Star rating,progression,must,Google Play says stars depend on performance,high,no,Thresholds unknown; design original scoring rules
+Offline play,platform,must,Google Play advertises no-Wi-Fi play,high,no,Offline campaign and local save
+Boosters/props,gameplay support,should,Google Play says props help pass levels,high,no,Exact booster inventory unknown
+Current/next bubble,game HUD,should,Secondary gameplay captures show shooter and next bubble,medium,no,Verify exact queue and swap cost
+Remaining shot counter,game HUD,should,Secondary gameplay capture shows remaining shots,medium,no,Use a fresh original HUD
+Target counter,game HUD,should,Secondary gameplay capture shows target progress,medium,no,Exact objective types unknown
+Campaign map,meta progression,should,No verified public map capture,low,no,Design an original chapter map after user walkthrough
+Level result flow,meta progression,must,Star-based performance is described,high,no,Result layout and thresholds unknown
+Loading/tutorial,first run,should,Not captured,none,no,Requires user walkthrough
+Pause/settings,options,should,Not captured,none,no,Requires user walkthrough
+Sound/music,audio,should,Store description mentions music,medium,no,Use original or properly licensed audio
+Haptics,accessibility,could,No target evidence,none,no,Optional original design choice
+Ads,monetization,must,Google Play marks app Contains ads,high,no,Exact placements unknown; no interruption during shots
+IAP/shop,monetization,could,No confirmed IAP evidence,none,no,Do not assume products or prices
+Cloud/account,platform,could,No confirmed evidence,none,no,Design offline-first; cloud only after requirements are known
