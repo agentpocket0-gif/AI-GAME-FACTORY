@@ -60,11 +60,11 @@ jobs:
       - name: Write task file
         env:
           TASK: ${{ inputs.task }}
+          TASK_FILE: ${{ runner.temp }}/dsh-game-task.md
         run: |
           python3 - <<'PY'
           import os
           from pathlib import Path
-          Path("factory/requests/dsh-game-task.md").parent.mkdir(parents=True, exist_ok=True)
           task = os.environ["TASK"].strip()
           task += (
               "\n\nRepository rules: keep the product original; do not copy protected Miniclip code, "
@@ -74,16 +74,15 @@ jobs:
               "Do not modify GitHub workflows, repository permissions, or secret handling. "
               "Do not add paid random-reward mechanics or interruptive ads.\n"
           )
-          Path("factory/requests/dsh-game-task.md").write_text(task, encoding="utf-8")
+          Path(os.environ["TASK_FILE"]).write_text(task, encoding="utf-8")
           PY
 
       - name: Run DSH headless coding agent
         env:
-          DSH_HOME: ${{ env.DSH_HOME }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
         run: |
           set -euo pipefail
-          dsh --profile headless --permission-mode workspace-write --approval-policy never --json - < factory/requests/dsh-game-task.md > "$RUNNER_TEMP/dsh-run.jsonl"
+          dsh --profile headless --permission-mode workspace-write --approval-policy never --json - < "$RUNNER_TEMP/dsh-game-task.md" > "$RUNNER_TEMP/dsh-run.jsonl"
 
       - name: Enforce game-agent change scope
         run: python3 tools/validate_agent_changes.py
