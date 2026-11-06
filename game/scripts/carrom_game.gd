@@ -367,6 +367,10 @@ func _handle_press(point: Vector2) -> void:
 		_cycle_striker()
 		return
 	if mode_button_rect.has_point(point):
+		if match_mode == MODE_CHALLENGE:
+			status_text = "Precision Challenge is a solo mode."
+			queue_redraw()
+			return
 		local_two_player = not local_two_player
 		bot_delay = -1.0
 		status_text = "Local pass-and-play selected." if local_two_player else "Offline AI opponent selected."
@@ -786,8 +790,15 @@ func _draw_hud(view: Vector2) -> void:
 	draw_string(font, Vector2(30.0 * scale, 190.0 * scale), turn_label, HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(12, roundi(22.0 * scale)), Color("#F1C978"))
 	var first_label := "PLAYER 1" if local_two_player else "YOU"
 	var second_label := "PLAYER 2" if local_two_player else "OPPONENT"
-	draw_string(font, Vector2(30.0 * scale, 230.0 * scale), first_label + "  %d" % scores[WHITE], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(13, roundi(26.0 * scale)), Color("#F5F2E9"))
-	draw_string(font, Vector2(30.0 * scale, 265.0 * scale), second_label + "  %d" % scores[BLACK], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(11, roundi(20.0 * scale)), Color("#B7C6D0"))
+	var first_value := scores[WHITE]
+	var second_value := scores[BLACK]
+	if match_mode == MODE_CHALLENGE:
+		first_label = "TARGETS LEFT"
+		second_label = "POCKETED"
+		first_value = _count_owner(WHITE)
+		second_value = scores[WHITE]
+	draw_string(font, Vector2(30.0 * scale, 230.0 * scale), first_label + "  %d" % first_value, HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(13, roundi(26.0 * scale)), Color("#F5F2E9"))
+	draw_string(font, Vector2(30.0 * scale, 265.0 * scale), second_label + "  %d" % second_value, HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(11, roundi(20.0 * scale)), Color("#B7C6D0"))
 	draw_string(font, Vector2(30.0 * scale, 305.0 * scale), "MATCHES  %d    WINS  %d    XP  %d" % [matches_played, matches_won, practice_xp], HORIZONTAL_ALIGNMENT_LEFT, view.x - 60.0 * scale, maxi(10, roundi(16.0 * scale)), Color("#7FA8B9"))
 	var timer_label := "TIME  %.0f" % maxf(0.0, turn_time_remaining)
 	var striker_data := _selected_striker()
@@ -880,12 +891,12 @@ func _draw_controls(view: Vector2) -> void:
 
 	draw_rect(game_mode_button_rect, Color("#6A3E64"), true)
 	draw_rect(game_mode_button_rect, Color("#DAB6D4"), false, outline)
-	var game_mode_label := _game_mode_name().to_upper()
+	var game_mode_label := "TARGET RUN" if match_mode == MODE_CHALLENGE else _game_mode_name().to_upper()
 	draw_string(ThemeDB.fallback_font, Vector2(game_mode_button_rect.position.x, game_mode_button_rect.position.y + game_mode_button_rect.size.y * 0.66), game_mode_label, HORIZONTAL_ALIGNMENT_CENTER, game_mode_button_rect.size.x, mode_font, Color("#F7E8F1"))
 
 	draw_rect(mode_button_rect, Color("#2C5360"), true)
 	draw_rect(mode_button_rect, Color("#A8D1D7"), false, outline)
-	var mode_label := "LOCAL 2 PLAYERS" if local_two_player else "VS OFFLINE AI"
+	var mode_label := "SOLO CHALLENGE" if match_mode == MODE_CHALLENGE else ("LOCAL 2 PLAYERS" if local_two_player else "VS OFFLINE AI")
 	draw_string(ThemeDB.fallback_font, Vector2(mode_button_rect.position.x, mode_button_rect.position.y + mode_button_rect.size.y * 0.66), mode_label, HORIZONTAL_ALIGNMENT_CENTER, mode_button_rect.size.x, mode_font, Color("#F4E8CD"))
 
 	draw_rect(board_button_rect, Color("#24485A"), true)
