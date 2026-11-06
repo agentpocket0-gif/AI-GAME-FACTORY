@@ -1,28 +1,58 @@
-# AI Game Factory — Godot Android
+# AI Game Factory — Board Masters Arena
 
-This public repository is the cloud-first workspace for an original mobile board game built with Godot 4.7.2.
+This public repository now contains the first playable Godot 4.7.2 Carrom-style game slice, public reference research, model routing policy and a restricted CI repair agent.
 
-## Current task
-Build an original carrom-inspired game using the public behaviour of Miniclip Carrom Pool as a research reference. Do not reuse Miniclip source code, logo, brand, artwork, audio, proprietary assets, private APIs or player data.
+## Open the game
 
-## Start here
-- Public reference research: research/carrom-pool/RESEARCH.md
-- Feature evidence matrix: research/carrom-pool/FEATURE_MATRIX.csv
-- 50 original board themes: research/carrom-pool/BOARD_PLAN_50.md
-- Game task brief: agents/CARROM_GAME_BRIEF.md
-- Analysis tool setup: docs/APP_ANALYSIS_STACK.md
-- Clean-room recon instructions: agents/REPLICA_RECON_METHOD.md
+Open the game/ folder in Godot 4.7.2 stable. The main scene is game/scenes/main.tscn.
 
-## Important status
-The repository currently contains a starter scaffold and a public-source research baseline. It is not a finished game and no reference APK has been inspected. The exact live counts of boards, strikers, pucks, trails and powers, current India prices, full ad placements, and offline sync behaviour still need a controlled walkthrough of the installed app.
+The current playable slice includes:
+- Touch and mouse drag-back aiming.
+- Moving discs, friction, cushion bounces and circle collisions.
+- Four pockets, basic scoring, a striker pocket foul and simplified queen-cover logic.
+- A simple local AI opponent.
+- 50 selectable board colour/palette themes.
+- Portrait-friendly layout.
 
-## Tool roles
-- replica-skill provides an 11-stage clean-room workflow. Its recon method is adapted for the DSH agent instructions in this repository.
-- REA provides CLI/MCP tools for evidence-backed app and Android APK inspection. APK analysis requires an authorised APK file, Node.js, a full JDK and the pinned JADX engine.
-- DSH can connect an external REA MCP server using its MCP client.
+This is a playable starting point, not the finished commercial game. It does not yet include complete official tournament rules, 1v1/2v2 online multiplayer, accounts, cloud saves, shop, Google Play Billing, ads, a full collection/inventory, finished 3D art/audio, final Android export or device QA.
+
+## Current development task
+
+Create an original carrom-inspired mobile game using Miniclip Carrom Pool only as a reference for public features and player flows. Do not reuse its source code, name/logo, text, art, sound, private APIs, player data or extracted assets.
+
+## Important project files
+
+- game/README.md — current playable scope and known gaps.
+- research/carrom-pool/RESEARCH.md — public-source reference research.
+- research/carrom-pool/FEATURE_MATRIX.csv — evidence-based feature checklist.
+- research/carrom-pool/SCREEN_CAPTURE_CHECKLIST.csv — A-to-Z walkthrough capture checklist.
+- research/carrom-pool/BOARD_PLAN_50.md — 50 original board theme concepts.
+- agents/CARROM_GAME_BRIEF.md — product and technical brief.
+- agents/GAME_AGENT_ROLES.md — specialist agent responsibilities.
+- agents/AUTO_REPAIR_AGENT.md — repair agent behaviour and limits.
+- docs/MODEL_ROUTING.md — verified NVIDIA/Gemini/Gemma IDs and rate-limit policy.
+- config/model-routing.json — machine-readable model configuration.
+
+## CI and automatic repair
+
+- Godot CI downloads Godot 4.7.2 and runs project import/parse plus a scene smoke test.
+- When a Godot CI run fails, Auto Repair Agent can use NVIDIA Nemotron to propose a restricted patch and open a pull request.
+- The repair agent can only edit selected files inside game/. It cannot edit workflows or secrets and cannot merge its own PR.
+- Add NVIDIA_API_KEY in GitHub Actions Secrets to enable the repair call. Without it, no code repair is attempted.
+
+## Model keys
+
+Add these GitHub Actions secret names only after reviewing the workflow:
+- NVIDIA_API_KEY
+- GEMINI_API_KEY_1
+- GEMINI_API_KEY_2
+
+Never put live keys in repository files. Gemini quotas are project-scoped, so two keys belonging to the same project do not double RPM/RPD.
 
 ## Public repository safety
-Never commit API keys, signing keys, private account exports, player data, or the commercial game's APK. Keep credentials in GitHub Actions Secrets. Use only APK files you are authorised to inspect. Do not put extracted proprietary assets in this repository.
 
-## Game principles
-Offline practice and local play should work without internet. Online matches and purchases require server-side validation. Use optional rewarded ads only, clearly priced fixed-content cosmetics, and a parent/guardian-approved purchase flow. Avoid paid random-reward boxes and paid roulette mechanics.
+Never commit live API keys, Android signing keys, private account exports, player data, or the commercial game's APK. Keep any authorised APK used for static analysis outside the public repository. Do not upload decompiled proprietary code or extracted app assets.
+
+## Monetisation principles
+
+Use optional rewarded ads and clear, fixed-content cosmetics only. Purchases require server-side validation and an appropriate adult/guardian-approved setup. Do not add paid random-reward boxes or paid roulette. Never interrupt an active shot or match with an ad.
