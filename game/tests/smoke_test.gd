@@ -24,6 +24,13 @@ func _run() -> void:
 	assert(game.get("match_mode") == 0, "Game mode button must return to Classic")
 	assert(game.get("pieces").size() == 19, "Classic must restore eighteen discs and queen")
 
+	var striker_position: Vector2 = game.get("striker")["position"]
+	game.call("_handle_press", striker_position)
+	assert(game.get("aiming") == true, "Touching the placed striker must start aiming")
+	game.call("_handle_release", striker_position + Vector2(0, 90))
+	assert(game.get("shot_active") == true, "Releasing a pull-back shot must start physics")
+
+	game.call("reset_match")
 	var player_mode_rect: Rect2 = game.get("mode_button_rect")
 	game.call("_handle_press", player_mode_rect.get_center())
 	assert(game.get("local_two_player") == true, "Player mode button must enable local two-player")
