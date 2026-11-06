@@ -1,0 +1,13 @@
+.godot/
+.cache/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.apk
+*.aab
+*.log
+repair-agent.patch
