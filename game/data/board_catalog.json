@@ -1,0 +1,352 @@
+[
+  {
+    "id": 1,
+    "name": "Royal Walnut",
+    "felt": "#197A63",
+    "frame": "#50311E",
+    "accent": "#E9C888"
+  },
+  {
+    "id": 2,
+    "name": "Ivory Courtyard",
+    "felt": "#C7B99D",
+    "frame": "#60513F",
+    "accent": "#F7E6C2"
+  },
+  {
+    "id": 3,
+    "name": "Sapphire Hall",
+    "felt": "#184C88",
+    "frame": "#182E50",
+    "accent": "#C9DDFC"
+  },
+  {
+    "id": 4,
+    "name": "Crimson Pavilion",
+    "felt": "#8C2838",
+    "frame": "#4A1E29",
+    "accent": "#E9BF86"
+  },
+  {
+    "id": 5,
+    "name": "Jade Garden",
+    "felt": "#286A4D",
+    "frame": "#203F34",
+    "accent": "#B9DEB4"
+  },
+  {
+    "id": 6,
+    "name": "Monsoon Veranda",
+    "felt": "#397E7F",
+    "frame": "#34464C",
+    "accent": "#C1D9D3"
+  },
+  {
+    "id": 7,
+    "name": "Lotus Pavilion",
+    "felt": "#A86C83",
+    "frame": "#643E58",
+    "accent": "#F6D8E3"
+  },
+  {
+    "id": 8,
+    "name": "Sandstone Palace",
+    "felt": "#B78356",
+    "frame": "#62432D",
+    "accent": "#EBD0A7"
+  },
+  {
+    "id": 9,
+    "name": "Copper Observatory",
+    "felt": "#56716D",
+    "frame": "#354743",
+    "accent": "#D1B47B"
+  },
+  {
+    "id": 10,
+    "name": "Moonlight Marble",
+    "felt": "#35485E",
+    "frame": "#202B44",
+    "accent": "#C0C8D6"
+  },
+  {
+    "id": 11,
+    "name": "Aurora Deck",
+    "felt": "#365B73",
+    "frame": "#302A5D",
+    "accent": "#9DE4D7"
+  },
+  {
+    "id": 12,
+    "name": "Glacier Court",
+    "felt": "#5E91B5",
+    "frame": "#344E6A",
+    "accent": "#E6F5FF"
+  },
+  {
+    "id": 13,
+    "name": "Ember Forge",
+    "felt": "#443C3B",
+    "frame": "#4E2720",
+    "accent": "#F09B58"
+  },
+  {
+    "id": 14,
+    "name": "Coral Reef",
+    "felt": "#2F8C91",
+    "frame": "#26575A",
+    "accent": "#E0B59C"
+  },
+  {
+    "id": 15,
+    "name": "Pearl Harbor",
+    "felt": "#4D6C89",
+    "frame": "#243A56",
+    "accent": "#DFD8C7"
+  },
+  {
+    "id": 16,
+    "name": "Bamboo Grove",
+    "felt": "#5B7951",
+    "frame": "#364B38",
+    "accent": "#D9C69B"
+  },
+  {
+    "id": 17,
+    "name": "Cedar Cabin",
+    "felt": "#76513E",
+    "frame": "#3C2A24",
+    "accent": "#D5B18B"
+  },
+  {
+    "id": 18,
+    "name": "Alpine Lodge",
+    "felt": "#6D7F83",
+    "frame": "#3F535C",
+    "accent": "#DCE4E5"
+  },
+  {
+    "id": 19,
+    "name": "Desert Mirage",
+    "felt": "#C4A66F",
+    "frame": "#775D3C",
+    "accent": "#B8D4E5"
+  },
+  {
+    "id": 20,
+    "name": "Oasis Courtyard",
+    "felt": "#2C8C89",
+    "frame": "#215B56",
+    "accent": "#F0D08A"
+  },
+  {
+    "id": 21,
+    "name": "Cloud Temple",
+    "felt": "#7D8995",
+    "frame": "#49576A",
+    "accent": "#F4F4E9"
+  },
+  {
+    "id": 22,
+    "name": "Sunstone Arena",
+    "felt": "#B48A3B",
+    "frame": "#6F4E2C",
+    "accent": "#F8D98A"
+  },
+  {
+    "id": 23,
+    "name": "Neon Circuit",
+    "felt": "#252F43",
+    "frame": "#17212F",
+    "accent": "#30E3D2"
+  },
+  {
+    "id": 24,
+    "name": "Pixel Arcade",
+    "felt": "#4D5793",
+    "frame": "#25284B",
+    "accent": "#F0A9D4"
+  },
+  {
+    "id": 25,
+    "name": "Hologram Lab",
+    "felt": "#505E7E",
+    "frame": "#3C2A62",
+    "accent": "#B5E7F2"
+  },
+  {
+    "id": 26,
+    "name": "Carbon Arena",
+    "felt": "#343D48",
+    "frame": "#19242C",
+    "accent": "#A3B4C4"
+  },
+  {
+    "id": 27,
+    "name": "Retro Lounge",
+    "felt": "#8A674E",
+    "frame": "#493B32",
+    "accent": "#E4C89E"
+  },
+  {
+    "id": 28,
+    "name": "Art Deco Night",
+    "felt": "#262735",
+    "frame": "#161824",
+    "accent": "#D1A87A"
+  },
+  {
+    "id": 29,
+    "name": "Carnival Square",
+    "felt": "#B54E5B",
+    "frame": "#6B343E",
+    "accent": "#F5C66E"
+  },
+  {
+    "id": 30,
+    "name": "Music Studio",
+    "felt": "#514B61",
+    "frame": "#2F2C3C",
+    "accent": "#E2C5AC"
+  },
+  {
+    "id": 31,
+    "name": "Wild Savanna",
+    "felt": "#987446",
+    "frame": "#54462E",
+    "accent": "#D8BD7E"
+  },
+  {
+    "id": 32,
+    "name": "Rainforest Canopy",
+    "felt": "#2D694C",
+    "frame": "#204638",
+    "accent": "#A9C98C"
+  },
+  {
+    "id": 33,
+    "name": "Volcanic Rock",
+    "felt": "#504A45",
+    "frame": "#302B2A",
+    "accent": "#E57945"
+  },
+  {
+    "id": 34,
+    "name": "Ocean Current",
+    "felt": "#286C91",
+    "frame": "#17445F",
+    "accent": "#C3EAF1"
+  },
+  {
+    "id": 35,
+    "name": "Starfield Station",
+    "felt": "#263D6A",
+    "frame": "#192447",
+    "accent": "#9FB9FA"
+  },
+  {
+    "id": 36,
+    "name": "Lunar Base",
+    "felt": "#707F94",
+    "frame": "#3E4A5B",
+    "accent": "#D6DEE9"
+  },
+  {
+    "id": 37,
+    "name": "Solar Flare",
+    "felt": "#A97737",
+    "frame": "#643F29",
+    "accent": "#FFE08E"
+  },
+  {
+    "id": 38,
+    "name": "Crystal Cavern",
+    "felt": "#6B5C83",
+    "frame": "#3F344F",
+    "accent": "#D7C9F0"
+  },
+  {
+    "id": 39,
+    "name": "Clockwork Workshop",
+    "felt": "#8A603B",
+    "frame": "#4C392B",
+    "accent": "#D4B77A"
+  },
+  {
+    "id": 40,
+    "name": "Library Classic",
+    "felt": "#6F594A",
+    "frame": "#3D302A",
+    "accent": "#DED1B6"
+  },
+  {
+    "id": 41,
+    "name": "Museum Gallery",
+    "felt": "#A9A08C",
+    "frame": "#5D5B52",
+    "accent": "#F0E9D7"
+  },
+  {
+    "id": 42,
+    "name": "Garden Conservatory",
+    "felt": "#557B61",
+    "frame": "#365443",
+    "accent": "#B7D7B4"
+  },
+  {
+    "id": 43,
+    "name": "Riverside Pavilion",
+    "felt": "#527A8B",
+    "frame": "#344E64",
+    "accent": "#B7DCE4"
+  },
+  {
+    "id": 44,
+    "name": "Festival Lanterns",
+    "felt": "#5C375B",
+    "frame": "#36233F",
+    "accent": "#EDB7A0"
+  },
+  {
+    "id": 45,
+    "name": "Snowfall Square",
+    "felt": "#A0B7C4",
+    "frame": "#536D80",
+    "accent": "#F4FAFF"
+  },
+  {
+    "id": 46,
+    "name": "Golden Dune",
+    "felt": "#C5A66B",
+    "frame": "#725339",
+    "accent": "#F5E0AF"
+  },
+  {
+    "id": 47,
+    "name": "Sakura Terrace",
+    "felt": "#946778",
+    "frame": "#563D59",
+    "accent": "#F1C7D8"
+  },
+  {
+    "id": 48,
+    "name": "Indigo Bazaar",
+    "felt": "#4D5589",
+    "frame": "#302C60",
+    "accent": "#D6C9F7"
+  },
+  {
+    "id": 49,
+    "name": "Skyline Penthouse",
+    "felt": "#535F6C",
+    "frame": "#303A45",
+    "accent": "#C6D0D7"
+  },
+  {
+    "id": 50,
+    "name": "Grand Championship",
+    "felt": "#242F3A",
+    "frame": "#131C2A",
+    "accent": "#D8BC86"
+  }
+]
