@@ -222,7 +222,7 @@ func _handle_press(point: Vector2) -> void:
 		return
 	var active_spawn := _turn_spawn(player_turn)
 	var baseline_y := active_spawn.y
-	if absf(point.y - baseline_y) <= striker_radius * 2.2 and point.x >= board_rect.position.x + board_size * 0.22 and point.x <= board_rect.end.x - board_size * 0.22:
+	if absf(point.y - baseline_y) <= striker_radius * 2.2 and point.x >= board_rect.position.x + board_size * 0.22 and point.x <= board_rect.end.x - board_size * 0.22 and point.distance_to(striker["position"]) > striker_radius * 1.15:
 		if local_two_player or player_turn == WHITE:
 			striker["position"] = Vector2(clampf(point.x, board_rect.position.x + board_size * 0.22, board_rect.end.x - board_size * 0.22), baseline_y)
 			queue_redraw()
