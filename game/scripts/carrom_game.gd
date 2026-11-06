@@ -112,6 +112,7 @@ func _cycle_striker() -> void:
 			selected_striker_index = next_index
 			break
 	_save_profile()
+	turn_time_remaining = _turn_time_limit()
 	status_text = "Striker: " + String(_selected_striker().get("name", "Classic"))
 	queue_redraw()
 
@@ -355,10 +356,13 @@ func _step_pieces(delta: float) -> void:
 			var owner: int = piece["owner"]
 			if owner == QUEEN:
 				queen_potted_this_shot = true
-			elif owner == player_turn:
-				own_piece_potted_this_shot = true
-				scores[player_turn] += 1
+			else:
 				potted_this_shot.append({"owner": owner, "kind": "disc"})
+				if owner == player_turn:
+					own_piece_potted_this_shot = true
+					scores[player_turn] += 1
+				else:
+					fouled_this_shot = true
 			continue
 
 		if pos.x < left + radius:
@@ -469,7 +473,7 @@ func _complete_turn() -> void:
 	striker["velocity"] = Vector2.ZERO
 
 	if queen_potted_this_shot:
-		if own_piece_potted_this_shot:
+		if not fouled_this_shot and own_piece_potted_this_shot:
 			queen_captured = true
 			scores[player_turn] += 3
 			status_text = "Queen covered! +3 points."
@@ -484,11 +488,17 @@ func _complete_turn() -> void:
 			status_text = "The queen needs cover. It returned to centre."
 
 	if fouled_this_shot:
-		status_text = "Foul: striker pocketed. Turn passed."
-		if not potted_this_shot.is_empty():
-			scores[player_turn] = maxi(0, scores[player_turn] - 1)
-			var returned: Dictionary = potted_this_shot.pop_back()
-			_add_disc(int(returned["owner"]), board_rect.get_center() + Vector2(piece_radius * 2.4, 0.0))
+		status_text = "Foul: striker or opponent disc pocketed. Turn passed."
+		var own_potted_count := 0
+		for record in potted_this_shot:
+			if int(record["owner"]) == player_turn:
+				own_potted_count += 1
+		scores[player_turn] = maxi(0, scores[player_turn] - own_potted_count)
+		for i in range(potted_this_shot.size()):
+			var returned: Dictionary = potted_this_shot[i]
+			var angle := TAU * float(i) / maxf(1.0, float(potted_this_shot.size()))
+			var restore_pos := board_rect.get_center() + Vector2(cos(angle), sin(angle)) * piece_radius * 2.5
+			_add_disc(int(returned["owner"]), restore_pos)
 		striker["position"] = _turn_spawn(player_turn)
 		player_turn = BLACK if player_turn == WHITE else WHITE
 	elif not own_piece_potted_this_shot:
@@ -502,6 +512,12 @@ func _complete_turn() -> void:
 	var queen_left := _count_owner(QUEEN)
 	var white_won := white_left == 0 and (match_mode == MODE_DISC_POOL or queen_captured or queen_left == 0)
 	var black_won := black_left == 0 and (match_mode == MODE_DISC_POOL or queen_captured or queen_left == 0)
+	if white_left == 0 and black_left == 0 and (match_mode == MODE_DISC_POOL or queen_captured or queen_left == 0):
+		game_over = true
+		status_text = "Draw! Tap New Match to play again."
+		_record_match_result(-1)
+		queue_redraw()
+		return
 	if white_won or black_won:
 		game_over = true
 		var winner := WHITE if white_won else BLACK
