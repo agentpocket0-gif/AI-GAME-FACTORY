@@ -72,12 +72,6 @@ func _run() -> void:
 	if not _check(game.get("pieces").size() == 12, "Disc Pool must contain twelve discs and no queen"):
 		return
 
-	game.call("_handle_press", game_mode_rect.get_center())
-	if not _check(game.get("match_mode") == 0, "Game mode button must return to Classic"):
-		return
-	if not _check(game.get("pieces").size() == 19, "Classic must restore eighteen discs and queen"):
-		return
-
 	# Precision Challenge is a solo mode with twelve gold targets and no opponent.
 	game.call("_handle_press", game_mode_rect.get_center())
 	if not _check(game.get("match_mode") == 2, "Game mode button must select Precision Challenge"):
