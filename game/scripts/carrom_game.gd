@@ -692,7 +692,7 @@ func _draw_token(pos: Vector2, radius: float, base: Color, shine: Color) -> void
 	draw_circle(pos, radius * 0.88, Color("#161E24"))
 	draw_circle(pos, radius * 0.80, base)
 	draw_arc(pos, radius * 0.69, 0.0, TAU, 56, shine, maxf(1.5, radius * 0.09), true)
-	draw_arc(pos, PI * 1.08, PI * 1.56, 28, 0, Color(1, 1, 1, 0.32), maxf(1.0, radius * 0.07), true)
+	draw_arc(pos, radius * 0.58, PI * 1.05, PI * 1.55, 28, Color(1, 1, 1, 0.32), maxf(1.0, radius * 0.07), true)
 	draw_circle(pos - Vector2(radius * 0.25, radius * 0.28), radius * 0.18, Color(1, 1, 1, 0.68))
 	draw_circle(pos - Vector2(radius * 0.17, radius * 0.19), radius * 0.07, Color(1, 1, 1, 0.32))
 
