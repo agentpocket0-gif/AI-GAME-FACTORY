@@ -1,7 +1,8 @@
 # Example DSH profile overlay for $DSH_HOME/profiles/<profile>/cordis.patch.yml
 # Merge these rows into the existing profile. Do not replace the entire profile.
 
-- name: '@deepseek-ai/dsh-llm-pi-ai'
+- id: llm-pi-ai
+  name: '@deepseek-ai/dsh-llm-pi-ai'
   config:
     providers:
       nvidia-nim:
@@ -58,3 +59,9 @@
     args: ['-y', 'rea-agents@6.8.0', 'mcp']
     env:
       REA_JADX_MCP_JAR: /absolute/path/to/jadx-headless-mcp-0.7.1-all.jar
+
+# Choose the NVIDIA route for the main game-development agent.
+- id: agent-default-model
+  config:
+    provider: nvidia-nim
+    model: nvidia/nemotron-3.5-lightning-30b-a3b
