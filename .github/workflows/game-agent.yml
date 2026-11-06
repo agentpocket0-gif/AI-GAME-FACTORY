@@ -1,0 +1,121 @@
+name: DSH Game Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "What should the game agent implement next?"
+        required: true
+        type: string
+        default: "Continue Board Masters Arena from agents/CARROM_GAME_BRIEF.md. Inspect the current project, implement the next smallest complete gameplay milestone, add tests, run all checks, and report changed files and known gaps."
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dsh-game-agent
+  cancel-in-progress: false
+
+jobs:
+  build-game-with-dsh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.11.0"
+          cache: "npm"
+
+      - name: Install pnpm and DSH
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.28.5 --activate
+          npm install --global @deepseek-ai/dsh@0.2.2-rc.1
+          dsh --version
+
+      - name: Prepare isolated DSH headless profile
+        env:
+          DSH_HOME: ${{ runner.temp }}/dsh-home
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$NVIDIA_API_KEY" ]; then
+            echo "::error::NVIDIA_API_KEY secret is missing."
+            exit 1
+          fi
+          export DSH_HOME
+          dsh --profile headless --dump-default-config > /dev/null
+          PROFILE_DIR="$DSH_HOME/profiles/headless"
+          cd "$PROFILE_DIR"
+          pnpm add @deepseek-ai/dsh-llm-pi-ai@0.2.2-rc.1
+          cd "$GITHUB_WORKSPACE"
+          cp config/dsh-profile-overlay.example.yml "$PROFILE_DIR/cordis.patch.yml"
+          echo "DSH_HOME=$DSH_HOME" >> "$GITHUB_ENV"
+
+      - name: Write task file
+        env:
+          TASK: ${{ inputs.task }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          Path("factory/requests/dsh-game-task.md").parent.mkdir(parents=True, exist_ok=True)
+          task = os.environ["TASK"].strip()
+          task += (
+              "\n\nRepository rules: keep the product original; do not copy protected Miniclip code, "
+              "branding, assets, audio, private APIs, or player data. Keep all changes reviewable. "
+              "Work in small milestones, add or update automated tests, run available Godot and "
+              "Python checks, and do not claim Android/device/online tests that were not run. "
+              "Do not modify GitHub workflows, repository permissions, or secret handling. "
+              "Do not add paid random-reward mechanics or interruptive ads.\n"
+          )
+          Path("factory/requests/dsh-game-task.md").write_text(task, encoding="utf-8")
+          PY
+
+      - name: Run DSH headless coding agent
+        env:
+          DSH_HOME: ${{ env.DSH_HOME }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: |
+          set -euo pipefail
+          dsh --profile headless --permission-mode workspace-write --approval-policy never --json - < factory/requests/dsh-game-task.md > "$RUNNER_TEMP/dsh-run.jsonl"
+
+      - name: Run project checks
+        run: |
+          set -euo pipefail
+          python3 -m json.tool config/model-routing.json > /dev/null
+          python3 -m py_compile tools/*.py
+          python3 -m unittest discover -s tests/py -v
+          python3 tools/gemini_video_review.py --help > /dev/null
+          python3 tools/gemma_reason.py --help > /dev/null
+
+      - name: Create review pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ github.token }}
+          branch: bot/dsh-game-${{ github.run_id }}
+          base: main
+          title: "DSH Game Agent implementation"
+          body: |
+            This pull request contains changes from the manually dispatched DSH headless game agent.
+
+            - NVIDIA Nemotron was used for code generation.
+            - DSH ran in workspace-write mode in a disposable GitHub Actions runner.
+            - Review the diff and test evidence before merging.
+            - No changes are auto-merged.
+          commit-message: "feat: apply DSH game-agent implementation"
+          delete-branch: true
+
+      - name: Upload DSH event log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-game-agent-log
+          path: ${{ runner.temp }}/dsh-run.jsonl
+          if-no-files-found: ignore
+          retention-days: 7
