@@ -105,6 +105,7 @@ def main() -> int:
             rpm_cap=int(limits["rpm"]),
             model_daily_cap=int(limits["per_model_rpd"]),
             group_daily_cap=int(limits["total_rpd"]),
+            preferred_pool_id=pool_id,
         )
         response = client.models.generate_content(
             model=fallback,
