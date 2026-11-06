@@ -1,5 +1,5 @@
 {
-  "policy_version": 2,
+  "policy_version": 3,
   "reasoning": "high",
   "providers": {
     "nvidia": {
@@ -24,17 +24,24 @@
         "GEMINI_API_KEY_1",
         "GEMINI_API_KEY_2"
       ],
-      "keys_share_project_quota_unless_user_confirms_separate_projects": true,
-      "max_parallel_requests": 1,
+      "separate_project_pools": {
+        "enabled": true,
+        "requirement": "Only valid when the two API keys belong to separate Google Cloud projects, not merely two keys in one project.",
+        "selection": "round_robin_for_new_requests",
+        "on_429": "stop_current_request_without_key_retry"
+      },
       "video_review": {
         "primary": "gemini-3.5-flash-lite",
         "fallback": "gemini-3.1-flash-lite",
         "thinking_level": "HIGH",
-        "app_limits": {
+        "per_project_app_limits": {
           "rpm": 10,
-          "primary_rpd": 500,
-          "fallback_rpd": 500,
-          "total_rolling_24h": 1000
+          "per_model_rpd": 500,
+          "total_rpd": 1000
+        },
+        "two_project_combined_app_ceiling": {
+          "rpm": 20,
+          "total_rpd": 2000
         }
       },
       "gemma4": {
@@ -43,17 +50,20 @@
           "gemma-4-31b-it"
         ],
         "thinking_mode": "HIGH",
-        "requested_app_limits_per_model": {
+        "per_project_app_limits": {
           "rpm": 28,
-          "rolling_24h": 14000
+          "total_rpd": 14000
         },
-        "note": "Application caps only; verify real project and model quotas in AI Studio."
+        "two_project_combined_app_ceiling": {
+          "rpm": 56,
+          "total_rpd": 28000
+        }
       },
       "quota_policy": {
+        "guard_window": "rolling_24h_local",
         "on_429": "STOP_AND_WAIT",
-        "key_rotation_on_quota_error": false,
-        "second_key_role": "authentication_recovery_only",
-        "daily_window": "rolling_24h_conservative_local_guard"
+        "retry_on_other_project_after_429": false,
+        "max_parallel_requests_per_project": 1
       }
     }
   },
