@@ -5,10 +5,15 @@ on:
     branches: [main]
     paths:
       - "game/**"
+      - "tools/**"
+      - "config/**"
+      - "requirements.txt"
       - ".github/workflows/godot-ci.yml"
       - ".github/workflows/auto-repair.yml"
-      - "tools/ai_repair.py"
+      - "tools/**"
       - "config/**"
+      - "requirements.txt"
+      - "docs/**"
   pull_request:
     paths:
       - "game/**"
@@ -42,10 +47,15 @@ jobs:
           echo "$RUNNER_TEMP/godot" >> "$GITHUB_PATH"
           echo "GODOT_BIN=$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
 
-      - name: Validate model configuration and repair-agent syntax
+      - name: Install Python model SDK
+        run: python3 -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Validate model configuration and all agent scripts
         run: |
           python3 -m json.tool config/model-routing.json > /dev/null
-          python3 -m py_compile tools/ai_repair.py
+          python3 -m py_compile tools/*.py
+          python3 tools/gemini_video_review.py --help > /dev/null
+          python3 tools/gemma_reason.py --help > /dev/null
 
       - name: Import and parse project
         run: $GODOT_BIN --headless --path game --editor --quit
