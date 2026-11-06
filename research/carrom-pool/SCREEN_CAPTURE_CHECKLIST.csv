@@ -1,0 +1,22 @@
+screen_id,screen_or_flow,entry_point,states_to_capture,observations,recording_status
+S01,Splash and loading,Cold launch,first launch/loading/slow network/error/retry,Branding and load duration,not_captured
+S02,Home lobby,After load,normal/loading/offline/event popup,Navigation/currency/event cards,not_captured
+S03,Mode selection,Play button,all modes/locked mode/rules dialog,Mode names and rules,not_captured
+S04,Matchmaking,Select online mode,search/cancel/timeout/opponent found,Entry cost and matching states,not_captured
+S05,Match board,Start a match,player turn/opponent turn/aim/shot/pause,Board geometry and shot UI,not_captured
+S06,Match result,Finish a match,win/loss/draw/rematch/disconnect,Coin changes/chest/ad prompts,not_captured
+S07,Equipment,Equipment tab,locked/owned/equipped/upgrade,piece names and visible Force Aim Time,not_captured
+S08,Powers,Power section,locked/unlocked/equipped,Power names and exact displayed effects,not_captured
+S09,Board and arena catalogue,Board selection,locked/owned/selected/preview,All visible board names and unlock requirements,not_captured
+S10,Pucks and trails,Equipment inventory,locked/owned/equipped,Count names rarity cosmetic effects,not_captured
+S11,Shop,Shop tab,initial/scroll/offer/detail/purchase confirmation,INR price SKU contents and age gate,not_captured
+S12,Free rewards,Free rewards button,available/unavailable/claimed,Reward amount and timer,not_captured
+S13,Rewarded ad,Explicit watch-ad button,available/unavailable/completed/failed,Placement and reward callback outcome,not_captured
+S14,Chest slots,After match,locked/timer/open/ad/gem prompt,Chest type time and contents,not_captured
+S15,Events and pass,Events tab,free track/paid track/expired event,Reward structure and dates,not_captured
+S16,Friends,Friends tab,empty/search/request/accepted/blocked,ID and invite flow,not_captured
+S17,Clubs,Clubs tab,join/create/chat/member view,Club rules and costs,not_captured
+S18,Leaderboards,Profile or lobby,league/friends/country/world,Rank and refresh states,not_captured
+S19,Profile and settings,Profile/settings,guest/linked/offline/audio/language,Account linking and privacy options,not_captured
+S20,Offline behaviour,Disable network before launch,offline launch/match/rewards/close/reopen,What remains playable and locally saved,not_captured
+S21,Reconnect,Restore network,connecting/synced/conflict/failure,Progress and reward reconciliation,not_captured
