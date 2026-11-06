@@ -121,9 +121,42 @@ func _run() -> void:
 	if not _check(game.get("player_turn") == 1, "Opponent-disc foul must pass the turn"):
 		return
 
+	# The offline opponent should aim for a valid black-disc-to-pocket shot.
+	game.call("reset_match")
+	var bot_aim: Vector2 = game.call("_choose_bot_aim_point")
+	var active_board: Rect2 = game.get("board_rect")
+	if not _check(active_board.grow(-1.0).has_point(bot_aim), "AI aim point must stay inside the board"):
+		return
+
+	# A foul with no coin pocketed must return one previously banked player coin.
+	game.call("reset_match")
+	var player_pieces: Array = game.get("pieces")
+	var removed_white := false
+	for i in range(player_pieces.size()):
+		if int(player_pieces[i]["owner"]) == 0:
+			player_pieces.remove_at(i)
+			removed_white = true
+			break
+	if not _check(removed_white, "A white disc must be available for the foul-penalty test"):
+		return
+	game.set("pieces", player_pieces)
+	var stored_scores: Array = game.get("scores")
+	stored_scores[0] = 1
+	game.set("scores", stored_scores)
+	game.set("shot_active", true)
+	game.set("fouled_this_shot", true)
+	game.set("potted_this_shot", [])
+	game.set("own_potted_this_shot", false)
+	game.call("_complete_turn")
+	if not _check(int(game.call("_count_owner", 0)) == 9, "Foul penalty must restore a previously pocketed own disc"):
+		return
+	stored_scores = game.get("scores")
+	if not _check(int(stored_scores[0]) == 0, "Foul penalty must subtract one banked point"):
+		return
+
 	game.call("_save_profile")
 	if not _check(FileAccess.file_exists("user://player_profile.json"), "Profile must be saved locally"):
 		return
 
-	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, foul return and local save")
+	print("SMOKE TEST PASSED: modes, boards, strikers, stats, turn timer, touch shot, collision, AI pocket aim, foul penalties and local save")
 	quit(0)
