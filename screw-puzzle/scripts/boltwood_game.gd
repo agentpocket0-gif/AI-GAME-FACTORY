@@ -456,12 +456,15 @@ func _start_level(value: int, change_screen: bool = true) -> void:
 		var bolt_count := 2
 		if level_index >= 3 and (piece_index + level_index) % 3 == 0:
 			bolt_count = 3
+		var piece_center: Vector2 = spec["center"]
+		var piece_size: Vector2 = spec["size"]
+		var piece_angle: float = float(spec["angle"])
 		for bolt_index in range(bolt_count):
 			var along := -0.30 if bolt_index == 0 else 0.30
 			if bolt_count == 3:
 				along = [-0.31, 0.0, 0.31][bolt_index]
-			var direction: Vector2 = Vector2.RIGHT.rotated(float(spec["angle"]))
-			var bolt_position: Vector2 = spec["center"] + direction * float(spec["size"].x) * along
+			var direction: Vector2 = Vector2.RIGHT.rotated(piece_angle)
+			var bolt_position: Vector2 = piece_center + direction * piece_size.x * along
 			var bolt_id := bolts.size()
 			bolts.append({
 				"id": bolt_id,
@@ -472,9 +475,9 @@ func _start_level(value: int, change_screen: bool = true) -> void:
 			bolt_ids.append(bolt_id)
 		pieces.append({
 			"id": piece_index,
-			"center": spec["center"],
-			"size": spec["size"],
-			"angle": spec["angle"],
+			"center": piece_center,
+			"size": piece_size,
+			"angle": piece_angle,
 			"bolt_ids": bolt_ids,
 			"active": true,
 			"palette": (level_index + piece_index) % WOOD_PALETTES.size()
