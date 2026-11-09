@@ -15,7 +15,7 @@ func _run_smoke_tests() -> void:
 		game._start_level(level)
 		var guard := 0
 		while game._active_piece_count() > 0 and game.overlay == "" and guard < 240:
-			var bolt_id: int = game._find_accessible_bolt()
+			var bolt_id: int = game._find_topmost_accessible_bolt()
 			assert(bolt_id >= 0, "Level %d has no accessible bolt." % level)
 			game._remove_bolt(bolt_id)
 			assert(game.overlay != "failed", "Solver filled the tray on level %d." % level)
