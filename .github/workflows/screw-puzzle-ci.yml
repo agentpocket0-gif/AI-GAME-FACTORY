@@ -1,0 +1,121 @@
+name: Boltwood Puzzle - CI and Android Debug APK
+
+on:
+  pull_request:
+    paths:
+      - "screw-puzzle/**"
+      - ".github/workflows/screw-puzzle-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "screw-puzzle/**"
+      - ".github/workflows/screw-puzzle-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: boltwood-puzzle-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools"
+
+      - name: Install Android API 36 platform
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.1.0"
+          yes | sdkmanager --licenses
+
+      - name: Download Godot 4.7.2 editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/godot"
+          cd "$RUNNER_TEMP/godot"
+          curl -fsSLO https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q Godot_v4.7.2-stable_linux.x86_64.zip
+          chmod +x Godot_v4.7.2-stable_linux.x86_64
+          echo "$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_PATH"
+          echo "GODOT_BIN=$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Install Godot 4.7.2 Android export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/godot-templates"
+          cd "$RUNNER_TEMP/godot-templates"
+          curl -fsSLO https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+          unzip -q Godot_v4.7.2-stable_export_templates.tpz
+          TEMPLATE_ROOT="$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          mkdir -p "$TEMPLATE_ROOT"
+          test -d templates
+          cp -R templates/. "$TEMPLATE_ROOT/"
+          test -f "$TEMPLATE_ROOT/android_debug.apk"
+
+      - name: Configure Godot Android SDK paths
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOF
+
+      - name: Import, parse, and run 30-level smoke solver
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GODOT_BIN" --headless --path screw-puzzle --editor --quit
+          "$GODOT_BIN" --headless --path screw-puzzle --script res://tests/smoke_test.gd
+
+      - name: Export Android arm64 debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          "$GODOT_BIN" --headless --path screw-puzzle --export-debug "Android" ../build/Boltwood-debug.apk
+          test -s build/Boltwood-debug.apk
+
+      - name: Verify APK manifest, ABI, and debug signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAPT="$ANDROID_HOME/build-tools/36.1.0/aapt"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.1.0/apksigner"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+          "$AAPT" dump badging build/Boltwood-debug.apk | tee build/apk-badging.txt
+          grep -F "package: name='com.agentpocket.boltwood' versionCode='1' versionName='0.1.0'" build/apk-badging.txt
+          grep -F "application-label:'Boltwood Puzzle'" build/apk-badging.txt
+          grep -F "native-code: 'arm64-v8a'" build/apk-badging.txt
+          "$APKSIGNER" verify --verbose build/Boltwood-debug.apk
+
+      - name: Upload Android debug APK and manifest report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Boltwood-Puzzle-Android-debug
+          path: |
+            build/Boltwood-debug.apk
+            build/apk-badging.txt
+          if-no-files-found: error
+          retention-days: 14
