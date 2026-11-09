@@ -96,10 +96,26 @@ jobs:
           "$GODOT_BIN" --headless --path screw-puzzle --export-debug "Android" ../build/Boltwood-debug.apk
           test -s build/Boltwood-debug.apk
 
-      - name: Upload Android debug APK
+      - name: Verify APK manifest, ABI, and debug signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAPT="$ANDROID_HOME/build-tools/36.1.0/aapt"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.1.0/apksigner"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+          "$AAPT" dump badging build/Boltwood-debug.apk | tee build/apk-badging.txt
+          grep -F "package: name='com.agentpocket.boltwood' versionCode='1' versionName='0.1.0'" build/apk-badging.txt
+          grep -F "application-label:'Boltwood Puzzle'" build/apk-badging.txt
+          grep -F "native-code: 'arm64-v8a'" build/apk-badging.txt
+          "$APKSIGNER" verify --verbose build/Boltwood-debug.apk
+
+      - name: Upload Android debug APK and manifest report
         uses: actions/upload-artifact@v4
         with:
           name: Boltwood-Puzzle-Android-debug
-          path: build/Boltwood-debug.apk
+          path: |
+            build/Boltwood-debug.apk
+            build/apk-badging.txt
           if-no-files-found: error
           retention-days: 14
