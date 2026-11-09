@@ -206,8 +206,10 @@ func _draw_play() -> void:
 
 	_draw_round_rect(Rect2(78, 1110, 744, 172), Color("#123b42"), 28, Color("#527971"), 3.0)
 	_draw_text("FASTENER TRAY   %d / %d" % [tray.size(), tray_capacity], Vector2(450, 1148), 22, MUTED)
+	var slot_spacing := minf(140.0, 650.0 / maxf(1.0, float(tray_capacity - 1)))
+	var tray_start := 450.0 - slot_spacing * float(tray_capacity - 1) * 0.5
 	for slot in range(tray_capacity):
-		var center := Vector2(170 + slot * 140, 1210)
+		var center := Vector2(tray_start + float(slot) * slot_spacing, 1210)
 		draw_circle(center + Vector2(0, 5), 43, Color(0, 0, 0, 0.22))
 		draw_circle(center, 39, Color("#0b252c"))
 		draw_arc(center, 39, 0.0, TAU, 48, Color("#537477"), 4.0, true)
@@ -533,6 +535,16 @@ func _find_accessible_bolt() -> int:
 		var bolt: Dictionary = bolts[index]
 		if not bool(bolt["removed"]) and _bolt_visible(bolt):
 			return index
+	return -1
+
+func _find_topmost_accessible_bolt() -> int:
+	for owner in range(pieces.size() - 1, -1, -1):
+		if not bool(pieces[owner]["active"]):
+			continue
+		for index in range(bolts.size()):
+			var bolt: Dictionary = bolts[index]
+			if int(bolt["owner"]) == owner and not bool(bolt["removed"]) and _bolt_visible(bolt):
+				return index
 	return -1
 
 func _remove_bolt(bolt_id: int) -> void:
