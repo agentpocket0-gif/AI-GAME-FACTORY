@@ -263,7 +263,7 @@ func _draw_piece(piece: Dictionary) -> void:
 	var angle: float = piece["angle"]
 	var points := _plank_points(center + Vector2(0, 12), size, angle)
 	draw_colored_polygon(points, Color(0, 0, 0, 0.25))
-	var face := WOOD_PALETTES[int(piece["palette"]) % WOOD_PALETTES.size()]
+	var face: Color = WOOD_PALETTES[int(piece["palette"]) % WOOD_PALETTES.size()]
 	draw_colored_polygon(_plank_points(center, size, angle), face)
 	var outline := _plank_points(center, size, angle)
 	outline.append(outline[0])
