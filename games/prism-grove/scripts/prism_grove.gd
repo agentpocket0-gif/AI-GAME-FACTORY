@@ -291,8 +291,8 @@ func _fill_tray() -> void:
 func can_place(shape: Array,x: int,y: int) -> bool:
     if shape.is_empty(): return false
     for offset in shape:
-        var px := x+offset.x
-        var py := y+offset.y
+        var px: int = x + int(offset.x)
+        var py: int = y + int(offset.y)
         if px < 0 or py < 0 or px >= N or py >= N: return false
         if int(board[py][px]) >= 0: return false
     return true
