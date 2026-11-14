@@ -1,0 +1,24 @@
+config_version=5
+
+[application]
+config/name="Prism Grove"
+config/version="0.1.0"
+run/main_scene="res://scenes/main.tscn"
+config/icon="res://assets/icon.svg"
+
+[display]
+window/size/viewport_width=900
+window/size/viewport_height=1600
+window/size/window_width_override=450
+window/size/window_height_override=800
+window/stretch/mode="canvas_items"
+window/handheld/orientation=1
+
+[physics]
+common/physics_ticks_per_second=60
+
+[rendering]
+textures/vram_compression/import_etc2_astc=true
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.04,0.08,0.10,1)
