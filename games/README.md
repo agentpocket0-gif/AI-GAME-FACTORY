@@ -1,9 +1,10 @@
 # Games in AI Game Factory
 
-Each game is kept in its own isolated folder or source bundle. Existing projects such as Board Masters Arena and Screw Puzzle are not modified.
+Each game is kept in its own isolated folder. Existing projects such as Board Masters Arena and Screw Puzzle are preserved.
 
 ## Prism Grove
-- Source bundle: `prism-grove-source.zip`
-- CI unpacks it to `games/prism-grove/`, runs Godot smoke tests, and exports an Android arm64 debug APK.
-- Open the extracted `games/prism-grove/` folder in Godot 4.7.2 Stable. Generate local SFX first with `python3 scripts/generate_audio.py`.
-- The debug APK is for device testing only, not a Play Store release.
+- Godot project: games/prism-grove/
+- Open this folder directly in Godot 4.7.2 Stable.
+- Generate the original sound effects before running locally: python3 scripts/generate_audio.py.
+- GitHub Actions runs smoke tests and builds an Android arm64 debug APK.
+- The debug APK is for device testing, not a Play Store release.
