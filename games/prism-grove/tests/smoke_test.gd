@@ -15,9 +15,10 @@ func _run() -> void:
     var game = packed.instantiate()
     root.add_child(game)
     await process_frame
+    game.start_new_game(false)
 
     if game.board.size() != 8 or game.tray.size() != 3:
-        _fail("Initial 8x8 board or three-piece tray is invalid")
+        _fail("New game must create an 8x8 board and three-piece tray")
         return
     if game.SHAPES.size() != 20 or game.PALETTES.size() != 4:
         _fail("Shape catalog or palette catalog is incomplete")
