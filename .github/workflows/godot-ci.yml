@@ -148,6 +148,10 @@ jobs:
         working-directory: games/prism-grove
         run: '"$GODOT_BIN" --headless --path . --script res://tests/smoke_test.gd'
 
+      - name: Install Godot Android Gradle build template
+        working-directory: games/prism-grove
+        run: '"$GODOT_BIN" --headless --editor --path . --install-android-build-template --quit'
+
       - name: Export Android arm64 debug APK
         working-directory: games/prism-grove
         run: |
