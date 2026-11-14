@@ -96,3 +96,83 @@ jobs:
           path: game/.godot/logs/
           if-no-files-found: ignore
           retention-days: 7
+
+
+  prism-grove-android-debug:
+    name: Prism Grove Android debug build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Unpack Prism Grove source
+        run: |
+          set -euo pipefail
+          mkdir -p games/prism-grove
+          unzip -oq games/prism-grove-source.zip -d games/prism-grove
+
+      - name: Set up Java
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 36 build tools
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Download Godot 4.7.2 and export templates
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/godot" "$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -O "$RUNNER_TEMP/godot/godot.zip"
+          wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz -O "$RUNNER_TEMP/godot/templates.tpz"
+          unzip -q "$RUNNER_TEMP/godot/godot.zip" -d "$RUNNER_TEMP/godot/bin"
+          unzip -q "$RUNNER_TEMP/godot/templates.tpz" -d "$RUNNER_TEMP/godot/templates"
+          cp -R "$RUNNER_TEMP/godot/templates/templates/." "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
+          chmod +x "$RUNNER_TEMP/godot/bin/Godot_v4.7.2-stable_linux.x86_64"
+          echo "GODOT_BIN=$RUNNER_TEMP/godot/bin/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Generate original sound effects
+        working-directory: games/prism-grove
+        run: python3 scripts/generate_audio.py
+
+      - name: Import and parse Prism Grove
+        working-directory: games/prism-grove
+        run: '"$GODOT_BIN" --headless --editor --path . --quit'
+
+      - name: Run Prism Grove gameplay smoke tests
+        working-directory: games/prism-grove
+        run: '"$GODOT_BIN" --headless --path . --script res://tests/smoke_test.gd'
+
+      - name: Export Android arm64 debug APK
+        working-directory: games/prism-grove
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/build"
+          "$GODOT_BIN" --headless --path . --export-debug Android "$GITHUB_WORKSPACE/build/PrismGrove-debug.apk"
+          test -s "$GITHUB_WORKSPACE/build/PrismGrove-debug.apk"
+
+      - name: Verify APK package, target SDK and signature
+        run: |
+          set -euo pipefail
+          APK="$GITHUB_WORKSPACE/build/PrismGrove-debug.apk"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/prism-grove-badging.txt"
+          grep -q "package: name='com.agentpocket.prismgrove'" "$RUNNER_TEMP/prism-grove-badging.txt"
+          grep -q "targetSdkVersion:'36'" "$RUNNER_TEMP/prism-grove-badging.txt"
+          "$APKSIGNER" verify --verbose "$APK"
+
+      - name: Upload Prism Grove debug APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: PrismGrove-Android-arm64-debug
+          path: build/PrismGrove-debug.apk
+          if-no-files-found: error
+          retention-days: 14
